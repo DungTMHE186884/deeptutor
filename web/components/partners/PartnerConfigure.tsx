@@ -7,7 +7,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, Plus, Save, Trash2, X } from "lucide-react";
+import { Loader2, Plus, Save, Share2, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import PartnerModelSelect from "@/components/partners/PartnerModelSelect";
 import { listLLMOptions, type LLMOption } from "@/lib/llm-options";
@@ -31,6 +31,8 @@ import PartnerWorkspacePicker from "@/components/partners/PartnerWorkspacePicker
 import ToolPicker from "@/components/partners/ToolPicker";
 import FaceEditor, { type FaceValue } from "@/components/partners/FaceEditor";
 import SoulEditor from "@/components/partners/SoulEditor";
+import SharePartnerModal from "@/components/partners/SharePartnerModal";
+import { confirmAction } from "@/lib/confirm";
 
 function Section({
   title,
@@ -85,6 +87,7 @@ export default function PartnerConfigure({
   });
   const [language, setLanguage] = useState(partner.language ?? "");
   const [savingIdentity, setSavingIdentity] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   // Soul
   const [soul, setSoul] = useState("");
@@ -274,6 +277,7 @@ export default function PartnerConfigure({
 
   const removeAsset = useCallback(
     async (assetType: "knowledge_base" | "skill" | "notebook", id: string) => {
+      if (!(await confirmAction(t("Remove this asset?"), { tone: "danger" }))) return;
       try {
         const result = await removePartnerAsset(partnerId, assetType, id);
         setAssets(result.assets);
@@ -318,19 +322,29 @@ export default function PartnerConfigure({
       <Section
         title={t("Identity")}
         action={
-          <button
-            type="button"
-            onClick={() => void saveIdentity()}
-            disabled={savingIdentity || !name.trim()}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--primary)] px-3 py-1.5 text-[12px] font-medium text-[var(--primary-foreground)] disabled:opacity-40"
-          >
-            {savingIdentity ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Save className="h-3.5 w-3.5" />
-            )}
-            {t("Save")}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowShareModal(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] px-3 py-1.5 text-[12px] font-medium text-[var(--foreground)] hover:border-[var(--ring)]"
+            >
+              <Share2 className="h-3.5 w-3.5 text-indigo-400" />
+              {t("Share")}
+            </button>
+            <button
+              type="button"
+              onClick={() => void saveIdentity()}
+              disabled={savingIdentity || !name.trim()}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--primary)] px-3 py-1.5 text-[12px] font-medium text-[var(--primary-foreground)] disabled:opacity-40"
+            >
+              {savingIdentity ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Save className="h-3.5 w-3.5" />
+              )}
+              {t("Save")}
+            </button>
+          </div>
         }
       >
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -561,6 +575,14 @@ export default function PartnerConfigure({
             </ul>
           )}
         </Section>
+      )}
+
+      {showShareModal && (
+        <SharePartnerModal
+          partnerId={partnerId}
+          partnerName={name}
+          onClose={() => setShowShareModal(false)}
+        />
       )}
     </div>
   );

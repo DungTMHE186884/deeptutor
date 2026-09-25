@@ -11,10 +11,10 @@ import { apiFetch, apiUrl } from "@/lib/api";
 //   • session override — sessionStorage, wins over the global default
 //   • first-play prompt — when the global default is off and the user manually
 //     plays one reply, we offer to auto-play the rest of the session.
-const SESSION_KEY_PREFIX = "deeptutor.voiceAutoplay.session"; // "on" | "off"
-const PROMPTED_KEY_PREFIX = "deeptutor.voiceAutoplay.prompted"; // "1"
-const GLOBAL_EVENT = "deeptutor:voice-autoplay-global";
-const SESSION_EVENT = "deeptutor:voice-autoplay-session";
+const SESSION_KEY_PREFIX = "pathmind.voiceAutoplay.session"; // "on" | "off"
+const PROMPTED_KEY_PREFIX = "pathmind.voiceAutoplay.prompted"; // "1"
+const GLOBAL_EVENT = "pathmind:voice-autoplay-global";
+const SESSION_EVENT = "pathmind:voice-autoplay-session";
 
 let cachedGlobal: boolean | null = null;
 let inflight: Promise<boolean> | null = null;

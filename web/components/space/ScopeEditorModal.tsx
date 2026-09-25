@@ -22,6 +22,7 @@ import {
   type AgentScope,
   type SelectGroup,
 } from "@/lib/chat-import";
+import { confirmAction } from "@/lib/confirm";
 
 interface ScopeEditorModalProps {
   agent: ImportAgent;
@@ -122,11 +123,12 @@ export default function ScopeEditorModal({
         return !keySet.has(sessionUnitKey(agent.source, meta, s.created_at));
       });
       if (orphaned.length > 0) {
-        const ok = window.confirm(
+        const ok = await confirmAction(
           t(
             "{{count}} conversations are no longer in scope. Permanently delete their imported copies? This cannot be undone.",
             { count: orphaned.length },
           ),
+          { tone: "danger" },
         );
         if (ok) {
           await Promise.allSettled(

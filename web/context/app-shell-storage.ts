@@ -5,17 +5,17 @@ import { activeWorkspaceId } from "@/lib/workspace-scope";
 
 export type AppLanguage = "en" | "zh";
 
-export const ACTIVE_SESSION_STORAGE_KEY = "deeptutor.activeSessionId.tab";
-export const LANGUAGE_STORAGE_KEY = "deeptutor-language";
-export const RESPONSE_LANGUAGE_STORAGE_KEY = "deeptutor-response-language";
-export const SIDEBAR_COLLAPSED_STORAGE_KEY = "deeptutor.sidebarCollapsed";
+export const ACTIVE_SESSION_STORAGE_KEY = "pathmind.activeSessionId.tab";
+export const LANGUAGE_STORAGE_KEY = "pathmind-language";
+export const RESPONSE_LANGUAGE_STORAGE_KEY = "pathmind-response-language";
+export const SIDEBAR_COLLAPSED_STORAGE_KEY = "pathmind.sidebarCollapsed";
 export const CHAT_RESPONSE_TIMEOUT_STORAGE_KEY =
-  "deeptutor.chatResponseTimeout";
-export const CODE_BLOCK_THEME_STORAGE_KEY = "deeptutor.code-block-theme";
+  "pathmind.chatResponseTimeout";
+export const CODE_BLOCK_THEME_STORAGE_KEY = "pathmind.code-block-theme";
 export const CODE_BLOCK_SHOW_LINE_NUMBERS_STORAGE_KEY =
-  "deeptutor.code-block-show-line-numbers";
+  "pathmind.code-block-show-line-numbers";
 export const CODE_BLOCK_WRAP_LONG_LINES_STORAGE_KEY =
-  "deeptutor.code-block-wrap-long-lines";
+  "pathmind.code-block-wrap-long-lines";
 
 // Mirror of the per-user ``chat_response_timeout`` UI preference. Cached in
 // localStorage so the chat watchdog (a separate provider from Settings) can
@@ -62,11 +62,11 @@ export function writeStoredChatResponseTimeout(seconds: number): void {
   }
 }
 
-export const ACTIVE_SESSION_EVENT = "deeptutor:active-session";
-export const LANGUAGE_EVENT = "deeptutor:language";
-export const RESPONSE_LANGUAGE_EVENT = "deeptutor:response-language";
-export const SIDEBAR_COLLAPSED_EVENT = "deeptutor:sidebar-collapsed";
-export const CODE_BLOCK_SETTINGS_EVENT = "deeptutor:code-block-settings";
+export const ACTIVE_SESSION_EVENT = "pathmind:active-session";
+export const LANGUAGE_EVENT = "pathmind:language";
+export const RESPONSE_LANGUAGE_EVENT = "pathmind:response-language";
+export const SIDEBAR_COLLAPSED_EVENT = "pathmind:sidebar-collapsed";
+export const CODE_BLOCK_SETTINGS_EVENT = "pathmind:code-block-settings";
 
 export function normalizeLanguage(
   value: string | null | undefined,
@@ -128,8 +128,8 @@ export function writeStoredLanguage(language: AppLanguage): void {
  *
  * The mirror of {@link hasStoredLanguage}, and needed for the same reason but
  * on the other key. The two languages were split later than the interface one,
- * so a browser that predates the split has `deeptutor-language` and no
- * `deeptutor-response-language` — and gating adoption of the server's value on
+ * so a browser that predates the split has `pathmind-language` and no
+ * `pathmind-response-language` — and gating adoption of the server's value on
  * `hasStoredLanguage` alone locks such a browser out of ever picking one up.
  */
 export function hasStoredResponseLanguage(): boolean {

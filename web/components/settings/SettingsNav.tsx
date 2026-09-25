@@ -2,10 +2,12 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { Search, X } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { LogOut, Search, ShieldCheck, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useSettingsAccess } from '@/features/settings/navigation/SettingsAccessProvider'
+import { useAuthStatus } from '@/hooks/useAuthStatus'
+import { logout } from '@/lib/auth'
 import { settingsAnchorHref, type Lang } from '@/features/settings/navigation/settings-nav'
 import {
   SETTINGS_PAGE_GROUPS,
@@ -20,6 +22,8 @@ export default function SettingsNav({ onNavigate }: { onNavigate?: () => void })
   const zh = i18n.language?.toLowerCase().startsWith('zh')
   const tr = (label: Lang) => (zh ? label.zh : label.en)
   const pathname = usePathname()
+  const router = useRouter()
+  const auth = useAuthStatus()
   const access = useSettingsAccess()
   const pages = visibleSettingsPages(access)
   const [query, setQuery] = useState('')
@@ -118,6 +122,31 @@ export default function SettingsNav({ onNavigate }: { onNavigate?: () => void })
           </p>
         )}
       </div>
+      {auth.enabled && auth.authenticated && (
+        <div className="shrink-0 space-y-0.5 border-t border-border/60 px-2.5 py-2">
+          {auth.isAdmin && (
+            <Link
+              href="/admin/users"
+              onClick={onNavigate}
+              className="flex min-h-8 items-center gap-2 rounded-md px-2.5 py-1.5 text-[13px] text-[var(--foreground)] outline-none transition-colors hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+            >
+              <ShieldCheck size={15} strokeWidth={1.8} className="shrink-0" />
+              <span>{t('Admin')}</span>
+            </Link>
+          )}
+          <button
+            type="button"
+            onClick={async () => {
+              await logout()
+              router.replace('/login')
+            }}
+            className="flex min-h-8 w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-[13px] text-[var(--foreground)] outline-none transition-colors hover:bg-accent/60 hover:text-red-500 focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+          >
+            <LogOut size={15} strokeWidth={1.8} className="shrink-0" />
+            <span>{t('Sign out')}</span>
+          </button>
+        </div>
+      )}
     </nav>
   )
 }

@@ -7,7 +7,14 @@ import { browserStorage } from "@/shared/storage";
 
 export type Theme = "light" | "dark" | "glass" | "snow";
 
-export const THEME_STORAGE_KEY = "deeptutor-theme";
+export const THEME_STORAGE_KEY = "pathmind-theme";
+
+/**
+ * Theme shown before we know the account (first visit, signed out) and for
+ * accounts that never picked one. The server's deployment default
+ * (PATHMIND_DEFAULT_THEME) is applied on top by AccountThemeSync.
+ */
+export const DEFAULT_THEME: Theme = "snow";
 
 type ThemeChangeListener = (theme: Theme) => void;
 const themeListeners = new Set<ThemeChangeListener>();
@@ -110,11 +117,21 @@ export function initializeTheme(): Theme {
     return stored;
   }
 
-  // Fall back to system preference
-  const systemTheme = getSystemTheme();
-  applyThemeToDocument(systemTheme);
-  saveThemeToStorage(systemTheme);
-  return systemTheme;
+  // Fall back to the app default (not the OS preference): every visitor
+  // who is not signed in sees the same theme.
+  applyThemeToDocument(DEFAULT_THEME);
+  saveThemeToStorage(DEFAULT_THEME);
+  return DEFAULT_THEME;
+}
+
+/** Forget this browser's cached theme (on sign-out). */
+export function clearStoredTheme(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(THEME_STORAGE_KEY);
+  } catch {
+    // localStorage may be disabled
+  }
 }
 
 /**

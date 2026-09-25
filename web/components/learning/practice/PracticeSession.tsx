@@ -5,7 +5,8 @@ import { practiceMarkdown } from '@/lib/practice-content'
 import { WorkspaceLabel } from '../LibraryWorkspace'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, CheckCircle2, Loader2 } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Loader2, Timer } from 'lucide-react'
+import { formatLocalDateTime, formatTimeElapsed, getUserTimezone } from '@/lib/timezone'
 import {
   checkPracticeAnswer,
   getPracticeQuestion,
@@ -37,13 +38,22 @@ export function PracticeSession({
   )
   const [total] = useState(queue.length)
   const [skipped, setSkipped] = useState(0)
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [index, setIndex] = useState(0)
   const [saved, setSaved] = useState(0)
   const [saving, setSaving] = useState(false)
   const [nextDue, setNextDue] = useState<number | null>(null)
   const dueDates = useRef(new Map<string, number>())
+  const [elapsed, setElapsed] = useState(0)
   const complete = index >= queue.length
+
+  useEffect(() => {
+    if (complete) return
+    const interval = window.setInterval(() => {
+      setElapsed(s => s + 1)
+    }, 1000)
+    return () => window.clearInterval(interval)
+  }, [complete])
   return (
     <section className="mx-auto max-w-3xl">
       <div className="mb-5 flex items-center justify-between gap-3">
@@ -56,9 +66,18 @@ export function PracticeSession({
           <ArrowLeft size={15} />
           {t('Back to practice')}
         </button>
-        <p className="text-xs text-muted-foreground" aria-live="polite">
-          {t('{{count}} remaining', { count: total - saved - skipped })}
-        </p>
+        <div className="flex items-center gap-3">
+          <div
+            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs font-mono text-muted-foreground"
+            title={`${t('Time elapsed')} · ${getUserTimezone()}`}
+          >
+            <Timer size={13} className="text-primary" />
+            <span>{formatTimeElapsed(elapsed)}</span>
+          </div>
+          <p className="text-xs text-muted-foreground" aria-live="polite">
+            {t('{{count}} remaining', { count: total - saved - skipped })}
+          </p>
+        </div>
       </div>
       <progress
         max={total || 1}
@@ -80,9 +99,14 @@ export function PracticeSession({
               {t('{{count}} skipped questions remain due.', { count: skipped })}
             </p>
           )}
+          <p className="mt-2 text-sm font-medium text-foreground">
+            {t('Total practice time: {{time}}', { time: formatTimeElapsed(elapsed) })}
+          </p>
           {nextDue && (
             <p className="mt-2 text-xs text-muted-foreground">
-              {t('Next review: {{date}}', { date: new Date(nextDue * 1000).toLocaleDateString() })}
+              {t('Next review: {{date}}', {
+                date: `${formatLocalDateTime(nextDue, i18n.language)} (${getUserTimezone()})`,
+              })}
             </p>
           )}
           <button

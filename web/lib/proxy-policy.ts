@@ -22,7 +22,7 @@ export function isRetiredPagePath(pathname: string): boolean {
 }
 
 // Paths whose responses come from the backend, not the Next app. The middleware
-// rewrites these to DEEPTUTOR_API_BASE_URL so the browser can use frontend-
+// rewrites these to PATHMIND_API_BASE_URL so the browser can use frontend-
 // relative URLs (e.g. `:3782/api/...` or `.../ws`) and let the rewrite
 // bridge the origin gap.
 export function isBackendPath(pathname: string): boolean {
@@ -48,8 +48,11 @@ const STATIC_ASSET =
 // internals, and public static assets (see STATIC_ASSET above).
 export function isAuthExempt(pathname: string): boolean {
   return (
+    pathname === "/" ||
+    pathname.startsWith("/pricing") ||
     pathname.startsWith(LOGIN_PATH) ||
     pathname.startsWith("/register") ||
+    pathname === "/terms" ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
     STATIC_ASSET.test(pathname)

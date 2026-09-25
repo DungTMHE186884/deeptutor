@@ -23,7 +23,14 @@ const loading = () => (
   />
 );
 const General = dynamic(() => import("./SettingsOverview"), { loading });
-const Usage = dynamic(() => import("@/features/settings/sections/UsageSettingsSection"), { loading });
+const Profile = dynamic(
+  () => import("@/features/settings/sections/ProfileSettingsSection"),
+  { loading },
+);
+const Billing = dynamic(
+  () => import("@/features/settings/sections/BillingSettingsSection"),
+  { loading },
+);
 const DataMigration = dynamic(() => import("@/features/settings/sections/DataMigrationSettingsSection"), { loading });
 const Status = dynamic(() => import("./SettingsRuntimePage"), { loading });
 const Appearance = dynamic(
@@ -50,22 +57,6 @@ const Knowledge = dynamic(
 );
 const Memory = dynamic(
   () => import("@/features/settings/sections/MemorySettingsSection"),
-  {
-    loading,
-  },
-);
-const About = dynamic(
-  () => import("@/features/settings/sections/AboutSettingsSection"),
-  {
-    loading,
-  },
-);
-const Learner = dynamic(
-  () => import("@/features/settings/sections/LearnerProfileSettingsSection"),
-  { loading },
-);
-const Guardian = dynamic(
-  () => import("@/features/settings/sections/GuardianSettingsSection"),
   {
     loading,
   },
@@ -139,18 +130,6 @@ const Starters = dynamic(
     loading,
   },
 );
-const Attachments = dynamic(
-  () => import("@/features/settings/sections/AttachmentsSettingsSection"),
-  { loading },
-);
-const Agent = dynamic(
-  () =>
-    import("./SubagentSettingsEditor").then(
-      (module) => module.SubagentSettingsEditor,
-    ),
-  { loading },
-);
-
 const Archive = dynamic(
   () => import("@/features/settings/sections/ArchivedChatsSettingsSection"),
   {
@@ -169,21 +148,19 @@ const Multimodal = dynamic(
 );
 
 const PAGES: Record<string, React.ComponentType> = {
+  profile: Profile,
+  billing: Billing,
   "data-migration": DataMigration,
   voice: Voice,
   multimodal: Multimodal,
   archive: Archive,
   general: General,
   status: Status,
-  usage: Usage,
   appearance: Appearance,
   network: Network,
   workspace: Workspace,
   knowledge: Knowledge,
   memory: Memory,
-  about: About,
-  "learner-profile": Learner,
-  guardian: Guardian,
   connections: Connections,
   llm: Llm,
   "task-models": Task,
@@ -197,20 +174,7 @@ const PAGES: Record<string, React.ComponentType> = {
   tools: Tools,
   capabilities: Capabilities,
   starters: Starters,
-  attachments: Attachments,
 };
-const AGENTS = {
-  "agent-claude-code": "claude_code",
-  "agent-codex": "codex",
-  "agent-antigravity": "antigravity",
-  "agent-kimi": "kimi",
-  "agent-opencode": "opencode",
-  "agent-mimo": "mimo",
-  "agent-hermes": "hermes",
-  "agent-hermes-remote": "hermes_remote",
-  "agent-openclaw": "openclaw",
-  "agent-deepseek-harness": "deepseek_harness",
-} as const;
 
 export default function SettingsPageContent({ section }: { section: string }) {
   const { t, i18n } = useTranslation();
@@ -244,7 +208,6 @@ export default function SettingsPageContent({ section }: { section: string }) {
       </div>
     );
   const Component = PAGES[key];
-  const kind = AGENTS[key as keyof typeof AGENTS];
   return (
     <fieldset disabled={saving || applying} aria-busy={saving || applying} className="min-w-0" data-settings-page={key}>
       {family.length > 1 && (
@@ -267,8 +230,6 @@ export default function SettingsPageContent({ section }: { section: string }) {
       )}
       {Component ? (
         <Component key={key} />
-      ) : kind ? (
-        <Agent key={key} kind={kind} />
       ) : null}
     </fieldset>
   );

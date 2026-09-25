@@ -14,6 +14,7 @@ import {
   Wand2,
 } from "lucide-react";
 import type { HistoryEntry } from "@/hooks/useKnowledgeHistory";
+import { confirmAction } from "@/lib/confirm";
 
 interface KbUpdateHistoryProps {
   entries: HistoryEntry[];
@@ -41,7 +42,10 @@ export default function KbUpdateHistory({
         </div>
         <button
           type="button"
-          onClick={onClear}
+          onClick={async () => {
+            if (!(await confirmAction(t("Clear the update history?"), { tone: "danger" }))) return;
+            onClear();
+          }}
           title={t("Clear history")}
           className="flex h-6 w-6 items-center justify-center rounded text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
           aria-label={t("Clear history")}

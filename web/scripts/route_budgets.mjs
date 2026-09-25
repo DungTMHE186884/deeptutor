@@ -78,7 +78,7 @@ async function startBuildServer() {
       env: {
         ...process.env,
         NEXT_TELEMETRY_DISABLED: "1",
-        DEEPTUTOR_API_BASE_URL: "http://127.0.0.1:9",
+        PATHMIND_API_BASE_URL: "http://127.0.0.1:9",
       },
       stdio: ["ignore", "pipe", "pipe"],
     },

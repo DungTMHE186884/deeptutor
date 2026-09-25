@@ -33,6 +33,7 @@ import {
   setCliAppEnabled,
   uninstallCliApp,
 } from "@/lib/cli-apps-api";
+import { confirmAction } from "@/lib/confirm";
 
 const PAGE_SIZE = 12;
 
@@ -278,14 +279,14 @@ function Installed({
                   <button
                     type="button"
                     disabled={busy === app.id}
-                    onClick={() => {
+                    onClick={async () => {
                       if (
-                        typeof window !== "undefined" &&
-                        !window.confirm(
+                        !(await confirmAction(
                           t('Remove "{{name}}" from this deployment?', {
                             name: app.display_name,
                           }),
-                        )
+                          { tone: "danger" },
+                        ))
                       ) {
                         return;
                       }

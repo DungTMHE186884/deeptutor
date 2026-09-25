@@ -37,7 +37,13 @@ export default function SettingsMain({ children }: { children: React.ReactNode }
     let destination = '/'
     try {
       const stored = browserStorage.readRaw('session', SETTINGS_RETURN_KEY)
-      if (stored?.startsWith('/') && !stored.startsWith('//') && !stored.startsWith('/settings'))
+      if (
+        stored?.startsWith('/') &&
+        !stored.startsWith('//') &&
+        !stored.startsWith('/settings') &&
+        !stored.startsWith('/pricing') &&
+        !stored.startsWith('/profile')
+      )
         destination = stored
     } catch {
       /* Home is a safe fallback. */

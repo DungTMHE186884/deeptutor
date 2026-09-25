@@ -341,7 +341,7 @@ export function EpubDocumentView({
           allowScriptedContent: false,
         });
         renditionRef.current = rendition;
-        rendition.themes.register("deeptutor", {
+        rendition.themes.register("pathmind", {
           "body, p, span, div": {
             "font-family":
               "ui-serif, Georgia, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', serif !important",
@@ -349,7 +349,7 @@ export function EpubDocumentView({
           "body *": { "vertical-align": "baseline" },
           img: { "max-width": "100%", height: "auto" },
         });
-        rendition.themes.select("deeptutor");
+        rendition.themes.select("pathmind");
         rendition.on("relocated", onRelocated);
         rendition.on("selected", onSelected);
         rendition.on("keydown", onRenditionKey);

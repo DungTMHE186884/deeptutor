@@ -25,6 +25,7 @@ import {
   formatKnowledgeTimestamp,
   type KnowledgeBase,
 } from "@/lib/knowledge-helpers";
+import { confirmAction } from "@/lib/confirm";
 
 /**
  * Devices paired to a connected MarginNote 4 library.
@@ -91,6 +92,7 @@ export default function KbMarginNoteDevicesSection({
   };
 
   const handleRevoke = async (deviceId: string) => {
+    if (!(await confirmAction(t("Revoke this device?"), { tone: "danger" }))) return;
     setError(null);
     try {
       await revokeMarginNote4Device({ kbName: kbRef, deviceId });

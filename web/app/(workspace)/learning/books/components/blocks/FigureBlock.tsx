@@ -60,7 +60,7 @@ export default function FigureBlock({ block }: FigureBlockProps) {
   const renderType = coerceRenderType(block.payload?.render_type, language);
 
   const result: VisualizeResult = {
-    schema_version: "deeptutor.visualization/v1",
+    schema_version: "pathmind.visualization/v1",
     response: description,
     render_type: renderType,
     renderer: {

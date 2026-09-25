@@ -24,12 +24,13 @@ const SOURCES: Record<string, string> = {
   partner_chat: "Partner Chat",
   import: "Imported",
 };
+import { formatLocalDate } from "@/lib/timezone";
+
 const number = (value: number) => value.toLocaleString();
-const dateLabel = (date: string) =>
-  new Date(`${date}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+const dateLabel = (date: string, locale?: string) => formatLocalDate(date, locale);
 
 export function PracticeInsights({ courseId, revision, workspaceId }: { courseId: string; revision: number; workspaceId?: string }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const search = useSearchParams();
   const router = useRouter();
   const days = [7, 30, 90].includes(Number(search.get("stats_days")))
@@ -93,7 +94,7 @@ export function PracticeInsights({ courseId, revision, workspaceId }: { courseId
           <h2 className="text-sm font-semibold">{t("Practice activity")}</h2>
           <p className="mt-1 text-xs text-muted-foreground">
             {data
-              ? `${dateLabel(data.start_date)} – ${dateLabel(data.end_date)}`
+              ? `${dateLabel(data.start_date, i18n.language)} – ${dateLabel(data.end_date, i18n.language)}`
               : t("Daily activity and sources")}
           </p>
         </div>

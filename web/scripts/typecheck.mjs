@@ -19,7 +19,7 @@ const tscBin = path.join(
 const original = readFileSync(tsconfigPath, "utf8");
 const isolatedTsconfigPath = path.join(
   webRoot,
-  `tsconfig.deeptutor-typecheck-${process.pid}.json`,
+  `tsconfig.pathmind-typecheck-${process.pid}.json`,
 );
 
 let result;

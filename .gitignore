@@ -1,5 +1,5 @@
 # ============================================
-# DeepTutor Project .gitignore
+# PathMind Project .gitignore
 # ============================================
 
 # ============================================
@@ -78,13 +78,13 @@ node_modules
 
 # Next.js build output
 .next/
-# Custom distDir builds (DEEPTUTOR_NEXT_DIST_DIR / parallel dev servers)
+# Custom distDir builds (PATHMIND_NEXT_DIST_DIR / parallel dev servers)
 web/.next-*/
 # PDF.js decoder files are copied from node_modules for local/dev and release
 # builds; they are dependency-generated assets, not source files.
 web/public/pdfjs/
 # Per-process TypeScript configs used by isolated build/typecheck wrappers
-web/tsconfig.deeptutor-*.json
+web/tsconfig.pathmind-*.json
 # Temporary Next.js dist roots created by isolated build/test runs
 web/tmp/
 out/
@@ -218,7 +218,7 @@ $RECYCLE.BIN/
 *.backup
 
 # Local scripts
-启动 DeepTutor.bat
+启动 PathMind.bat
 
 # ============================================
 # Testing and Coverage
@@ -281,3 +281,6 @@ dmypy.json
 *.mp3
 *.wav
 *.ogg
+
+# Local dev logs (start.bat)
+/logs/

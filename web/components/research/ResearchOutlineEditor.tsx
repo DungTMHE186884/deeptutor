@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { OutlineItem } from "@/lib/research-types";
+import { confirmAction } from "@/lib/confirm";
 
 type OutlineStatus = "editing" | "researching" | "done" | "failed";
 
@@ -63,9 +64,10 @@ export default function ResearchOutlineEditor({
     [],
   );
 
-  const removeItem = useCallback((index: number) => {
+  const removeItem = useCallback(async (index: number) => {
+    if (!(await confirmAction(t("Remove this item from the outline?"), { tone: "danger" }))) return;
     setItems((prev) => prev.filter((_, i) => i !== index));
-  }, []);
+  }, [t]);
 
   const addItem = useCallback(() => {
     setItems((prev) => [...prev, { title: "", overview: "" }]);
@@ -206,7 +208,7 @@ export default function ResearchOutlineEditor({
                 {!locked && items.length > 1 && (
                   <button
                     type="button"
-                    onClick={() => removeItem(index)}
+                    onClick={() => void removeItem(index)}
                     className="mt-0.5 shrink-0 rounded p-0.5 text-[var(--muted-foreground)]/20 opacity-0 transition-all hover:bg-red-500/10 hover:text-red-500/60 group-hover:opacity-100"
                   >
                     <Trash2 size={12} />

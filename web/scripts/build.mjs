@@ -47,14 +47,14 @@ function prepareBuildTsconfig(snapshots, distDir) {
   if (!tsconfig) return null;
   const buildTsconfigPath = path.join(
     webRoot,
-    `tsconfig.deeptutor-build-${process.pid}.json`,
+    `tsconfig.pathmind-build-${process.pid}.json`,
   );
   restore(buildTsconfigPath, configureTypeIncludes(tsconfig[1], distDir));
   return buildTsconfigPath;
 }
 
 const snapshots = generatedPaths
-  .filter((path) => process.env.DEEPTUTOR_BUILD_SKIP_MISSING !== "1")
+  .filter((path) => process.env.PATHMIND_BUILD_SKIP_MISSING !== "1")
   .map((path) => [path, snapshot(path)]);
 
 const isEntry =
@@ -63,7 +63,7 @@ const isEntry =
 export { restoreAll };
 
 if (isEntry) {
-  const distDir = process.env.DEEPTUTOR_NEXT_DIST_DIR || ".next";
+  const distDir = process.env.PATHMIND_NEXT_DIST_DIR || ".next";
   const buildTsconfigPath = prepareBuildTsconfig(snapshots, distDir);
   let result;
   try {
@@ -72,7 +72,7 @@ if (isEntry) {
     // post-build validator expects Turbopack's output layout and fails with
     // ENOENT routes-manifest-deterministic.json otherwise (see issue #1428).
     // The Webpack standalone bundle is only needed by the local
-    // `deeptutor start` launcher, so keep the flag for local/Docker builds.
+    // `pathmind start` launcher, so keep the flag for local/Docker builds.
     const isVercel = process.env.VERCEL === "1";
     const args = isVercel
       ? [nextBin, "build", ...process.argv.slice(2)]
@@ -86,7 +86,7 @@ if (isEntry) {
         env: {
           ...process.env,
           ...(buildTsconfigPath
-            ? { DEEPTUTOR_NEXT_TSCONFIG: path.basename(buildTsconfigPath) }
+            ? { PATHMIND_NEXT_TSCONFIG: path.basename(buildTsconfigPath) }
             : {}),
         },
       },

@@ -11,7 +11,7 @@ import {
 import { apiFetch, apiUrl } from "@/lib/api";
 import {
   getStoredTheme,
-  getSystemTheme,
+  DEFAULT_THEME,
   setTheme as applyThemePreference,
   subscribeToThemeChanges,
   type Theme,
@@ -75,7 +75,7 @@ const AppShellContext = createContext<AppShellContextValue | null>(null);
 
 export function AppShellProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
-    return getStoredTheme() ?? getSystemTheme();
+    return getStoredTheme() ?? DEFAULT_THEME;
   });
   // Always start with "en" to match SSR; hydrate from localStorage after mount
   const [language, setLanguageState] = useState<AppLanguage>("en");
@@ -119,7 +119,7 @@ export function AppShellProvider({ children }: { children: React.ReactNode }) {
     void (async () => {
       // Both keys are checked, not just the interface one. They were split
       // after the interface language shipped, so a browser from before the
-      // split has `deeptutor-language` and no `deeptutor-response-language` —
+      // split has `pathmind-language` and no `pathmind-response-language` —
       // and returning here on the first alone locked it out of ever adopting
       // the account's model output language.
       if (hasStoredLanguage() && hasStoredResponseLanguage()) {

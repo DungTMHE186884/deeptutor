@@ -17,6 +17,7 @@ import {
   knowledgeBaseRoute,
 } from "@/lib/resource-routes";
 import type { IndexingLLMSelection } from "@/features/knowledge/model/types";
+import { confirmAction } from "@/lib/confirm";
 
 const panelLoading = () => (
   <div
@@ -231,8 +232,9 @@ export default function KnowledgePage() {
     async (name: string) => {
       try {
         const workspaces = await resourceUsage("knowledge_bases", name);
-        const impact = workspaces.length ? "\n\n" + t("Used by workspaces: {{names}}", { names: workspaces.join(", ") }) : "";
-        if (!window.confirm(t('Delete knowledge base "{{name}}"?', { name }) + impact)) return;
+        const impact = workspaces.length ? t("Used by workspaces: {{names}}", { names: workspaces.join(", ") }) : "";
+        const question = t('Delete knowledge base "{{name}}"?', { name });
+        if (!(await confirmAction(impact || question, { title: impact ? question : undefined, confirmLabel: t("Delete"), tone: "danger" }))) return;
         await deleteKb(name);
         if (explicitSelection === name) {
           setExplicitSelection(null);

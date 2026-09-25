@@ -1,14 +1,12 @@
 "use client";
 
+import { UserMenu } from "@/components/auth/UserMenu";
 import { navigateTask } from "@/lib/workspace-scope";
 import { sessionWorkspaceId } from "@/lib/session-api";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { SidebarShell } from "@/components/sidebar/SidebarShell";
-import { LogoutButton } from "@/components/auth/LogoutButton";
-import { AdminLink } from "@/components/auth/AdminLink";
-import { ProfileLink } from "@/components/auth/ProfileLink";
 import { useAppShell } from "@/context/AppShellContext";
 import {
   deleteSession,
@@ -29,6 +27,7 @@ import {
 } from "@/lib/learning-api";
 import { sessionRoute } from "@/lib/mastery-session";
 import { subscribeSessionChanges } from "@/lib/session-events";
+import { confirmAction } from "@/lib/confirm";
 
 export default function UtilitySidebar() {
   const { t } = useTranslation();
@@ -111,7 +110,7 @@ export default function UtilitySidebar() {
 
   const handleDeleteSession = useCallback(
     async (sessionId: string) => {
-      if (!window.confirm(t("Permanently delete this chat and its tutor threads? This cannot be undone."))) return;
+      if (!(await confirmAction(t("Permanently delete this chat and its tutor threads? This cannot be undone."), { tone: "danger" }))) return;
       await deleteSession(sessionId, sessionWorkspaceId(sessions.find(item => item.session_id === sessionId)));
       setSessions((prev) =>
         prev.filter((session) => session.session_id !== sessionId),
@@ -156,13 +155,7 @@ export default function UtilitySidebar() {
       onRenameSession={handleRenameSession}
       onDeleteSession={handleDeleteSession}
       onOrganizeSession={handleOrganizeSession}
-      footerSlot={(collapsed) => (
-        <>
-          <ProfileLink collapsed={collapsed} />
-          <AdminLink collapsed={collapsed} />
-          <LogoutButton collapsed={collapsed} />
-        </>
-      )}
+      footerSlot={(collapsed) => <UserMenu collapsed={collapsed} />}
     />
   );
 }

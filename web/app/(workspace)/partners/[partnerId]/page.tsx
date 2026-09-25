@@ -50,6 +50,7 @@ import SaveToNotebookModal, {
   type NotebookSaveMessage,
   type NotebookSavePayload,
 } from "@/components/notebook/SaveToNotebookModal";
+import { confirmAction } from "@/lib/confirm";
 
 type Tab = "chat" | "configure" | "channels" | "archive";
 
@@ -219,11 +220,12 @@ function PartnerDetail() {
 
   const handleDestroy = async () => {
     if (
-      !window.confirm(
+      !(await confirmAction(
         t(
           "Delete this partner and ALL its data (workspace, sessions, channels)? This cannot be undone.",
         ),
-      )
+        { tone: "danger" },
+      ))
     )
       return;
     try {

@@ -16,7 +16,7 @@ import { SourcesStep } from '@/components/space/learning/TopicWizardSteps'
 /**
  * Languages a book can be written in, plus the request-driven default.
  *
- * Mirrors `_LANGUAGE_LABELS` in `deeptutor/services/prompt/language.py`, which
+ * Mirrors `_LANGUAGE_LABELS` in `pathmind/services/prompt/language.py`, which
  * has always handled all of these — the picker offered only English and
  * Chinese, so everyone else got a book in a language they didn't ask for
  * (issue #471). Labels are endonyms: someone looking for their own language

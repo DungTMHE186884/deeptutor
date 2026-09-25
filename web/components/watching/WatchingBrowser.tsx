@@ -210,7 +210,7 @@ export function WatchingBrowser({
           {account && !account.connected && (
             <p className="mb-4 text-sm text-[var(--muted-foreground)]">
               {t(
-                'Sign in with your Invidious account, then approve read-only access to return here. Your DeepTutor login is separate.'
+                'Sign in with your Invidious account, then approve read-only access to return here. Your PathMind login is separate.'
               )}
             </p>
           )}

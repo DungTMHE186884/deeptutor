@@ -49,11 +49,6 @@ export async function applyExtensionPayload(
     }
     return;
   }
-  if (key.startsWith("subagent:")) {
-    const { updateSubagentSettings } = await import("@/lib/subagents-api");
-    await updateSubagentSettings({ backends: { [key.slice(9)]: payload } });
-    return;
-  }
   const guardian = /^guardian:(materials|restrictions):(.+)$/.exec(key);
   const endpoint = guardian
     ? `/api/multi-user/learners/${encodeURIComponent(guardian[2])}/${guardian[1]}`

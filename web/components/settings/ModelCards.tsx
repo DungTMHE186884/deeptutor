@@ -16,6 +16,7 @@ import type {
   CatalogProfile,
   ServiceName,
 } from "@/features/settings/store/SettingsStore";
+import { confirmAction } from "@/lib/confirm";
 
 /** Provider disclosure rows contain connection fields and their model cards.
  * Opening an editor and selecting a runtime model are separate actions;
@@ -451,8 +452,9 @@ export function ModelCard({
         <button
           type="button"
           aria-label={t("Delete")}
-          onClick={(event) => {
+          onClick={async (event) => {
             event.stopPropagation();
+            if (!(await confirmAction(t("Delete this model?"), { tone: "danger" }))) return;
             onDelete();
           }}
           className="shrink-0 rounded-md p-1 text-[var(--muted-foreground)]/0 transition-colors hover:bg-[var(--accent)] hover:text-red-500 focus-visible:text-red-500 group-hover:text-[var(--muted-foreground)]/70 max-sm:text-[var(--muted-foreground)]/70"

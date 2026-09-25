@@ -21,6 +21,7 @@ import {
 } from "@/lib/partners-api";
 import type { ExportableMessage } from "@/lib/chat-export";
 import { displaySessionTitle } from "@/lib/session-title";
+import { confirmAction } from "@/lib/confirm";
 
 interface HistoryMessage {
   role: string;
@@ -111,6 +112,7 @@ export default function PartnerArchives({
 
   const handleDelete = useCallback(
     async (session: PartnerSessionInfo) => {
+      if (!(await confirmAction(t("Delete this conversation?"), { tone: "danger" }))) return;
       try {
         await deletePartnerSession(partnerId, session.session_key);
         if (selectedKey === session.session_key) setSelectedKey("");

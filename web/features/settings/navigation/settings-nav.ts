@@ -11,7 +11,6 @@ import {
   FileScan,
   FolderOpen,
   Image as ImageIcon,
-  Info,
   KeyRound,
   Library,
   ListChecks,
@@ -19,12 +18,9 @@ import {
   Mic,
   Network,
   Palette,
-  Paperclip,
   Search,
-  ShieldCheck,
   SlidersHorizontal,
   Sparkles,
-  UserRound,
   Wrench,
   type LucideIcon,
 } from "lucide-react";
@@ -65,6 +61,8 @@ export interface SettingsLeaf {
   service?: ServiceName;
   /** Hidden from non-admin users (the backend rejects them anyway). */
   adminOnly?: boolean;
+  /** Only shown to a signed-in account (multi-user auth enabled). */
+  authOnly?: boolean;
 }
 
 export interface SettingsCategory {
@@ -77,16 +75,15 @@ export interface SettingsCategory {
   href: string;
   /** Nested anchors (omitted for direct-section categories). */
   children?: SettingsLeaf[];
-  /** Shown only when the backend reports an active learner policy. */
-  learnerOnly?: boolean;
-  /** Shown only to authenticated standard users who may act as guardians. */
-  guardianOnly?: boolean;
+  /** Hidden from non-admin users. */
+  adminOnly?: boolean;
 }
 
 export function isSettingsLeafVisible(
   leaf: SettingsLeaf,
   access: SettingsAccess,
 ): boolean {
+  if (leaf.authOnly && !access.authEnabled) return false;
   return !(leaf.adminOnly && access.hideAdminOnly);
 }
 
@@ -94,8 +91,8 @@ export function isSettingsCategoryVisible(
   category: SettingsCategory,
   access: SettingsAccess,
 ): boolean {
-  if (category.learnerOnly && !access.showLearnerOnly) return false;
-  if (category.guardianOnly && !access.showGuardianOnly) return false;
+  if (!category) return false;
+  if (category.adminOnly && access.hideAdminOnly) return false;
   return (
     !category.children ||
     category.children.some((leaf) => isSettingsLeafVisible(leaf, access))
@@ -123,6 +120,7 @@ const MODEL_CHILDREN: SettingsLeaf[] = [
     },
     icon: AudioLines,
     tile: "bg-rose-500/10 text-rose-600",
+    adminOnly: true,
   },
   {
     key: "multimodal",
@@ -134,6 +132,7 @@ const MODEL_CHILDREN: SettingsLeaf[] = [
     },
     icon: ImageIcon,
     tile: "bg-violet-500/10 text-violet-600",
+    adminOnly: true,
   },
   {
     key: "connections",
@@ -145,6 +144,7 @@ const MODEL_CHILDREN: SettingsLeaf[] = [
     },
     icon: KeyRound,
     tile: "bg-sky-500/10 text-sky-600 dark:text-sky-400",
+    adminOnly: true,
   },
   {
     key: "llm",
@@ -157,17 +157,19 @@ const MODEL_CHILDREN: SettingsLeaf[] = [
     icon: Brain,
     tile: "bg-violet-500/10 text-violet-600 dark:text-violet-400",
     service: "llm",
+    adminOnly: true,
   },
   {
     key: "task-models",
     href: "/settings#task-models",
     label: { zh: "后台任务模型", en: "Task models" },
     blurb: {
-      zh: "DeepTutor 自己发起的调用使用的模型。",
-      en: "The model behind the calls DeepTutor makes on its own.",
+      zh: "PathMind 自己发起的调用使用的模型。",
+      en: "The model behind the calls PathMind makes on its own.",
     },
     icon: ListChecks,
     tile: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400",
+    adminOnly: true,
   },
   {
     key: "embedding",
@@ -180,6 +182,7 @@ const MODEL_CHILDREN: SettingsLeaf[] = [
     icon: Database,
     tile: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
     service: "embedding",
+    adminOnly: true,
   },
   {
     key: "search",
@@ -189,6 +192,7 @@ const MODEL_CHILDREN: SettingsLeaf[] = [
     icon: Search,
     tile: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
     service: "search",
+    adminOnly: true,
   },
   {
     key: "tts",
@@ -201,6 +205,7 @@ const MODEL_CHILDREN: SettingsLeaf[] = [
     icon: AudioLines,
     tile: "bg-rose-500/10 text-rose-600 dark:text-rose-400",
     service: "tts",
+    adminOnly: true,
   },
   {
     key: "stt",
@@ -213,6 +218,7 @@ const MODEL_CHILDREN: SettingsLeaf[] = [
     icon: Mic,
     tile: "bg-pink-500/10 text-pink-600 dark:text-pink-400",
     service: "stt",
+    adminOnly: true,
   },
   {
     key: "imagegen",
@@ -225,6 +231,7 @@ const MODEL_CHILDREN: SettingsLeaf[] = [
     icon: ImageIcon,
     tile: "bg-fuchsia-500/10 text-fuchsia-600 dark:text-fuchsia-400",
     service: "imagegen",
+    adminOnly: true,
   },
   {
     key: "videogen",
@@ -237,6 +244,7 @@ const MODEL_CHILDREN: SettingsLeaf[] = [
     icon: Clapperboard,
     tile: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
     service: "videogen",
+    adminOnly: true,
   },
 ];
 
@@ -274,6 +282,7 @@ const CHAT_CHILDREN: SettingsLeaf[] = [
     },
     icon: SlidersHorizontal,
     tile: "bg-lime-500/10 text-lime-600 dark:text-lime-400",
+    adminOnly: true,
   },
   {
     key: "starters",
@@ -285,143 +294,6 @@ const CHAT_CHILDREN: SettingsLeaf[] = [
     },
     icon: Sparkles,
     tile: "bg-violet-500/10 text-violet-600 dark:text-violet-400",
-  },
-  {
-    key: "attachments",
-    href: "/settings#attachments",
-    label: { zh: "附件", en: "Attachments" },
-    blurb: {
-      zh: "聊天附件的大小上限与文本提取预算。",
-      en: "Upload caps and extraction budgets for chat attachments.",
-    },
-    icon: Paperclip,
-    tile: "bg-teal-500/10 text-teal-600 dark:text-teal-400",
-    adminOnly: true,
-  },
-];
-
-const AGENT_CHILDREN: SettingsLeaf[] = [
-  {
-    key: "agent-claude-code",
-    href: "/settings#agent-claude-code",
-    label: { zh: "Claude Code", en: "Claude Code" },
-    blurb: {
-      zh: "DeepTutor 调用本机 Claude Code 时的模型、推理强度与运行参数。",
-      en: "Model, reasoning effort, and run params for the local Claude Code.",
-    },
-    // Brand glyph shares the lucide call signature (size/className).
-    icon: ClaudeGlyph as unknown as LucideIcon,
-    tile: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
-    adminOnly: true,
-  },
-  {
-    key: "agent-codex",
-    href: "/settings#agent-codex",
-    label: { zh: "Codex", en: "Codex" },
-    blurb: {
-      zh: "DeepTutor 调用本机 Codex 时的模型、推理强度与运行参数。",
-      en: "Model, reasoning effort, and run params for the local Codex.",
-    },
-    icon: CodexGlyph as unknown as LucideIcon,
-    tile: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-    adminOnly: true,
-  },
-  {
-    // Gemini CLI's supported replacement.
-    key: "agent-antigravity",
-    href: "/settings#agent-antigravity",
-    label: { zh: "Antigravity CLI", en: "Antigravity CLI" },
-    blurb: {
-      zh: "DeepTutor 调用本机 Antigravity CLI 时的模型与运行参数。",
-      en: "Model and run params for the local Antigravity CLI.",
-    },
-    icon: GeminiGlyph as unknown as LucideIcon,
-    tile: "bg-sky-500/10 text-sky-600 dark:text-sky-400",
-    adminOnly: true,
-  },
-  {
-    key: "agent-kimi",
-    href: "/settings#agent-kimi",
-    label: { zh: "Kimi CLI", en: "Kimi CLI" },
-    blurb: {
-      zh: "DeepTutor 调用本机 Kimi CLI 时的模型与运行参数。",
-      en: "Model and run params for the local Kimi CLI.",
-    },
-    icon: KimiGlyph as unknown as LucideIcon,
-    tile: "bg-zinc-500/10 text-zinc-700 dark:text-zinc-300",
-    adminOnly: true,
-  },
-  {
-    key: "agent-opencode",
-    href: "/settings#agent-opencode",
-    label: { zh: "opencode", en: "opencode" },
-    blurb: {
-      zh: "DeepTutor 调用本机 opencode 时的模型、推理强度与运行参数。",
-      en: "Model, reasoning effort, and run params for the local opencode.",
-    },
-    icon: OpencodeGlyph as unknown as LucideIcon,
-    tile: "bg-neutral-500/10 text-neutral-700 dark:text-neutral-300",
-    adminOnly: true,
-  },
-  {
-    key: "agent-mimo",
-    href: "/settings#agent-mimo",
-    label: { zh: "MiMo Code", en: "MiMo Code" },
-    blurb: {
-      zh: "DeepTutor 调用本机 MiMo Code 时的模型、推理强度与运行参数。",
-      en: "Model, reasoning effort, and run params for the local MiMo Code.",
-    },
-    icon: MimoGlyph as unknown as LucideIcon,
-    tile: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
-    adminOnly: true,
-  },
-  {
-    key: "agent-hermes",
-    href: "/settings#agent-hermes",
-    label: { zh: "Hermes Agent", en: "Hermes Agent" },
-    blurb: {
-      zh: "DeepTutor 调用本机 Hermes Agent 时的模型、推理强度与运行参数。",
-      en: "Model, reasoning effort, and run params for the local Hermes Agent.",
-    },
-    icon: HermesGlyph as unknown as LucideIcon,
-    tile: "bg-violet-500/10 text-violet-600 dark:text-violet-400",
-    adminOnly: true,
-  },
-  {
-    key: "agent-hermes-remote",
-    href: "/settings#agent-hermes-remote",
-    label: { zh: "Hermes Agent（远程）", en: "Hermes Agent (remote)" },
-    blurb: {
-      zh: "通过 HTTP 网关调用远程 Hermes Agent，并按会话保持上下文。",
-      en: "Call a remote Hermes Agent over HTTP with per-chat session continuity.",
-    },
-    icon: HermesGlyph as unknown as LucideIcon,
-    tile: "bg-violet-500/10 text-violet-600 dark:text-violet-400",
-    adminOnly: true,
-  },
-  {
-    key: "agent-openclaw",
-    href: "/settings#agent-openclaw",
-    label: { zh: "OpenClaw", en: "OpenClaw" },
-    blurb: {
-      zh: "DeepTutor 通过 Gateway 或本地模式调用 OpenClaw 的运行参数。",
-      en: "Gateway or local-mode run params for the local OpenClaw agent.",
-    },
-    icon: OpenClawGlyph as unknown as LucideIcon,
-    tile: "bg-red-500/10 text-red-600 dark:text-red-400",
-    adminOnly: true,
-  },
-  {
-    key: "agent-deepseek-harness",
-    href: "/settings#agent-deepseek-harness",
-    label: { zh: "DeepSeek Harness", en: "DeepSeek Harness" },
-    blurb: {
-      zh: "DeepTutor 通过 Python SDK 或 headless CLI 调用 DeepSeek Harness。",
-      en: "Python SDK or headless CLI settings for DeepSeek Harness.",
-    },
-    icon: DeepSeekGlyph as unknown as LucideIcon,
-    tile: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
-    adminOnly: true,
   },
 ];
 
@@ -435,6 +307,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
   },
   {
     key: "network",
+    adminOnly: true,
     label: { zh: "网络", en: "Network" },
     blurb: {
       zh: "端口、浏览器 API 地址与 CORS",
@@ -445,6 +318,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
   },
   {
     key: "workspace",
+    adminOnly: true,
     label: { zh: "工作区", en: "Workspace" },
     blurb: {
       zh: "系统、通用与自建工作区，根目录与存储迁移",
@@ -455,6 +329,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
   },
   {
     key: "models",
+    adminOnly: true,
     label: { zh: "模型", en: "Models" },
     blurb: {
       zh: "语言、向量、搜索、语音与生成模型",
@@ -466,6 +341,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
   },
   {
     key: "knowledge",
+    adminOnly: true,
     label: { zh: "知识库", en: "Knowledge Base" },
     blurb: { zh: "文档解析引擎", en: "Document parsing engine" },
     icon: Library,
@@ -475,45 +351,12 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     key: "chat",
     label: { zh: "聊天", en: "Chat" },
     blurb: {
-      zh: "工具、能力与附件",
-      en: "Tools, capabilities, and attachments",
+      zh: "工具、能力与起始建议",
+      en: "Tools, capabilities, and starting points",
     },
     icon: MessagesSquare,
     href: "/settings#chat",
     children: CHAT_CHILDREN,
-  },
-  {
-    key: "agents",
-    label: { zh: "伙伴和智能体", en: "Partners & Agents" },
-    blurb: {
-      zh: "配置可在对话中调用的子智能体",
-      en: "Configure the subagents you can call on in chat",
-    },
-    icon: Bot,
-    href: "/settings#agents",
-    children: AGENT_CHILDREN,
-  },
-  {
-    key: "learner-profile",
-    learnerOnly: true,
-    label: { zh: "学习档案", en: "Learner profile" },
-    blurb: {
-      zh: "调整年龄、年级与讲解偏好。",
-      en: "Adjust age, grade, and explanation preferences.",
-    },
-    icon: UserRound,
-    href: "/settings#learner-profile",
-  },
-  {
-    key: "guardian",
-    guardianOnly: true,
-    label: { zh: "监护管理", en: "Guardian" },
-    blurb: {
-      zh: "查看已授权学习者与学习材料。",
-      en: "Review authorized learners and learning materials.",
-    },
-    icon: ShieldCheck,
-    href: "/settings#guardian",
   },
   {
     key: "memory",
@@ -524,16 +367,6 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     },
     icon: BrainCircuit,
     href: "/settings#memory",
-  },
-  {
-    key: "about",
-    label: { zh: "关于", en: "About" },
-    blurb: {
-      zh: "版本、更新与项目资源",
-      en: "Version, updates, and project resources",
-    },
-    icon: Info,
-    href: "/settings#about",
   },
 ];
 
@@ -546,9 +379,9 @@ export const SETTINGS_ALIASES: Record<string, string> = {
   imagegen: "multimodal",
   videogen: "multimodal",
   overview: "general",
+  about: "general",
   models: "llm",
   chat: "starters",
-  agents: "agent-claude-code",
   "document-parsing": "knowledge",
   image: "multimodal",
   video: "multimodal",
@@ -602,14 +435,7 @@ const STORAGE_PATHS: Record<string, string> = {
   imagegen: "data/user/settings/model_catalog.json",
   videogen: "data/user/settings/model_catalog.json",
   tools: "data/user/settings/interface.json",
-  attachments: "data/user/settings/system.json",
   capabilities: "data/user/settings/main.yaml · agents.yaml",
-  "agent-claude-code": "data/user/settings/subagent.json",
-  "agent-codex": "data/user/settings/subagent.json",
-  "agent-antigravity": "data/user/settings/subagent.json",
-  "agent-kimi": "data/user/settings/subagent.json",
-  "agent-opencode": "data/user/settings/subagent.json",
-  "agent-mimo": "data/user/settings/subagent.json",
 };
 
 export function storagePathFor(
@@ -621,6 +447,5 @@ export function storagePathFor(
   }
   const key = resolveSettingsKey(pathname.replace(/^\/settings[\/#]?/, ""));
   if (key === "general") return "data/user/settings/interface.json";
-  if (key.startsWith("agent-")) return "data/user/settings/subagent.json";
   return STORAGE_PATHS[key] ?? STORAGE_PATHS[pathname] ?? null;
 }

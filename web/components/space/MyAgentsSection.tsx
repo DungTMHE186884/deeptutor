@@ -46,6 +46,7 @@ import {
   type AgentScope,
   type ImportSource,
 } from "@/lib/chat-import";
+import { confirmAction } from "@/lib/confirm";
 
 /**
  * "My Agents" — each named, scoped slice of an imported `.claude` / `.codex`
@@ -191,7 +192,7 @@ export default function MyAgentsSection() {
 
   const handleDeleteSession = useCallback(
     async (sessionId: string) => {
-      if (!window.confirm(t("Permanently delete this chat and its tutor threads? This cannot be undone."))) return;
+      if (!(await confirmAction(t("Permanently delete this chat and its tutor threads? This cannot be undone."), { tone: "danger" }))) return;
       await deleteSession(sessionId);
       if (activeSessionId === sessionId) setActiveSessionId(null);
       setSessions((prev) =>
@@ -256,7 +257,7 @@ export default function MyAgentsSection() {
             { name: agent.name, count: owned.length },
           )
         : t("Delete “{{name}}”?", { name: agent.name });
-      if (!window.confirm(message)) return;
+      if (!(await confirmAction(message, { tone: "danger" }))) return;
       await deleteAgent(agent.id);
       await Promise.allSettled(
         owned.map((s) => deleteSession(s.session_id || s.id)),

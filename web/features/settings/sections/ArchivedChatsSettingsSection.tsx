@@ -31,6 +31,7 @@ import {
 } from "@/lib/session-archive";
 import { notifySessionsChanged } from "@/lib/session-events";
 import { sessionRoute } from "@/lib/mastery-session";
+import { confirmAction } from "@/lib/confirm";
 
 export default function ArchivedChatsSettingsSection() {
   const { t } = useTranslation();
@@ -128,14 +129,15 @@ export default function ArchivedChatsSettingsSection() {
         <button
           type="button"
           disabled={loading || !!busy || !count}
-          onClick={() => {
+          onClick={async () => {
             if (
-              !window.confirm(
+              !(await confirmAction(
                 t(
                   "Permanently delete all {{count}} archived chats and their tutor threads? This cannot be undone.",
                   { count },
                 ),
-              )
+                { tone: "danger" },
+              ))
             )
               return;
             const ids = Object.values(buckets)
@@ -237,13 +239,14 @@ export default function ArchivedChatsSettingsSection() {
               await updateSessionOrganization(id, { archived: false }, sessionWorkspaceId(sessions.find(item => item.session_id === id)));
             })
           }
-          onDelete={(id) => {
+          onDelete={async (id) => {
             if (
-              !window.confirm(
+              !(await confirmAction(
                 t(
                   "Permanently delete this chat and its tutor threads? This cannot be undone.",
                 ),
-              )
+                { tone: "danger" },
+              ))
             )
               return;
             void mutate(`delete:${id}`, () => remove(id));

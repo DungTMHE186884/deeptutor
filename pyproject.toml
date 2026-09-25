@@ -1,4 +1,4 @@
-# Python project configuration for DeepTutor
+# Python project configuration for PathMind
 # This file configures Black, Ruff, and other Python tools
 
 [build-system]
@@ -6,7 +6,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "deeptutor"
+name = "pathmind"
 dynamic = ["version"]
 description = "An agent-native intelligent learning companion with multi-agent collaboration and RAG"
 # Python 3.14 is supported by the core app now that compiled base dependencies
@@ -41,7 +41,7 @@ dependencies = [
     # install must be able to connect them without an optional extra.
     "mcp>=1.26.0,<2.0.0",
     "pageindex>=0.2.10,<0.3.0",
-    # Full app dependencies included by default for `pip install deeptutor`.
+    # Full app dependencies included by default for `pip install pathmind`.
     "anthropic>=0.30.0",
     "dashscope>=1.14.0",
     "perplexityai>=0.1.0",
@@ -80,26 +80,26 @@ dependencies = [
     "json-repair>=0.57.0,<1.0.0",
     "croniter>=6.0.0,<7.0.0",
     # Process-tree memory readings for /api/system/memory. Soft dependency:
-    # deeptutor.runtime.memory_probe imports it lazily and falls back to /proc,
+    # pathmind.runtime.memory_probe imports it lazily and falls back to /proc,
     # so a missing wheel costs the settings strip, not the app.
     "psutil>=5.9.0,<8.0.0",
 ]
 
 [project.scripts]
-deeptutor = "deeptutor_cli.main:main"
-deeptutor-export-frontend-contracts = "deeptutor.api.contracts.export:main"
+pathmind = "pathmind.api.run_server:main"
+pathmind-export-frontend-contracts = "pathmind.api.contracts.export:main"
 
-[project.entry-points."deeptutor.reading_extensions"]
-read_aloud = "deeptutor.reading.read_aloud:ReadAloudExtension"
-guided_learning = "deeptutor.reading.study_guidance:StudyGuidanceExtension"
-vocabulary = "deeptutor.reading.vocabulary:VocabularyExtension"
-quiz = "deeptutor.reading.quiz:ReadingQuizExtension"
-translation = "deeptutor.reading.translation:TranslationExtension"
+[project.entry-points."pathmind.reading_extensions"]
+read_aloud = "pathmind.reading.read_aloud:ReadAloudExtension"
+guided_learning = "pathmind.reading.study_guidance:StudyGuidanceExtension"
+vocabulary = "pathmind.reading.vocabulary:VocabularyExtension"
+quiz = "pathmind.reading.quiz:ReadingQuizExtension"
+translation = "pathmind.reading.translation:TranslationExtension"
 
 [project.optional-dependencies]
 # Compatibility extra for source installs and older docs. These packages are
-# already included in the public `deeptutor` wheel; the local CLI-only project
-# under `packaging/deeptutor-cli` uses the same list without Web assets/server deps.
+# already included in the public `pathmind` wheel; the local CLI-only project
+# under `packaging/pathmind-cli` uses the same list without Web assets/server deps.
 cli = [
     # LLM provider SDKs
     "anthropic>=0.30.0",
@@ -148,9 +148,9 @@ codebuddy = ["codebuddy-agent-sdk>=0.3,<0.4"]
 video-learning = ["youtube-transcript-api>=1.0.0,<2.0.0"]
 
 # Compatibility extra for source installs and older docs. These packages are
-# already included in the public `deeptutor` wheel.
+# already included in the public `pathmind` wheel.
 server = [
-    "deeptutor[cli]",
+    "pathmind[cli]",
     "fastapi>=0.100.0",
     "uvicorn[standard]>=0.24.0",
     "websockets>=12.0",
@@ -170,7 +170,7 @@ server = [
 # IM platform SDKs. The MCP client used for deferred tools is a core dependency
 # (see `mcp` above), not a partners-only one.
 partners = [
-    "deeptutor[server]",
+    "pathmind[server]",
     "python-telegram-bot[socks]>=22.6,<23.0",
     "wecom-aibot-sdk>=1.0.8,<2.0.0",
     "lark-oapi>=1.5.0,<2.0.0",
@@ -196,12 +196,12 @@ partners = [
 ]
 
 # Optional document-parsing engines for the shared parse layer
-# (deeptutor/services/parsing). MinerU is an external CLI / hosted API and is
+# (pathmind/services/parsing). MinerU is an external CLI / hosted API and is
 # not a pip dependency. Engines import lazily, so these stay opt-in and an
 # absent engine simply reports unavailable in Settings → Document Parsing.
 parse-markitdown = ["markitdown[all]>=0.1.7"]
 # Docling's base package intentionally leaves some format backends as extras.
-# Install all input-format dependencies so DeepTutor can honor the complete
+# Install all input-format dependencies so PathMind can honor the complete
 # upstream format list. Legacy Office needs LibreOffice and video needs ffmpeg
 # on the host in addition to these Python packages.
 parse-docling = [
@@ -210,18 +210,18 @@ parse-docling = [
 ]
 # Current PyMuPDF4LLM includes CPU-only layout/OCR and image extraction on its
 # public conversion path. Keep it upgradeable so format and layout gains land
-# without a DeepTutor-side major-version ceiling.
+# without a PathMind-side major-version ceiling.
 parse-pymupdf4llm = ["pymupdf4llm>=1.28.2"]
 parse-liteparse = ["liteparse>=2.14.2"]
 parse = [
-    "deeptutor[parse-markitdown]",
-    "deeptutor[parse-docling]",
-    "deeptutor[parse-pymupdf4llm]",
-    "deeptutor[parse-liteparse]",
+    "pathmind[parse-markitdown]",
+    "pathmind[parse-docling]",
+    "pathmind[parse-pymupdf4llm]",
+    "pathmind[parse-liteparse]",
 ]
 
-# Legacy alias kept for one release: `pip install deeptutor[tutorbot]`.
-tutorbot = ["deeptutor[partners]"]
+# Legacy alias kept for one release: `pip install pathmind[tutorbot]`.
+tutorbot = ["pathmind[partners]"]
 
 # Matrix (Element) channel for partners. Mirrors requirements/matrix.txt.
 # Default Matrix install is non-E2EE so it works without libolm/python-olm.
@@ -233,7 +233,7 @@ matrix = [
 
 # Optional Matrix E2EE addon. Mirrors requirements/matrix-e2e.txt and requires libolm.
 matrix-e2e = [
-    "deeptutor[matrix]",
+    "pathmind[matrix]",
     "matrix-nio[e2e]>=0.25.2,<1.0.0",
 ]
 
@@ -247,13 +247,13 @@ math-animator = ["manim>=0.19.0"]
 # 3.x API (see services/rag/pipelines/graphrag/engine.py). Every graphrag 3.x
 # release is capped at python <3.14; the `python_version` marker mirrors that
 # so on 3.14+ the extra resolves to a no-op instead of an unsatisfiable hard
-# dep — otherwise pip backtracks deeptutor to the last extra-free version
+# dep — otherwise pip backtracks pathmind to the last extra-free version
 # (1.4.5) and silently downgrades. Floor is 3.0.1 (3.0.0/3.0.3 were yanked).
 graphrag = ["graphrag>=3.0.1,<4.0.0; python_version < '3.14'"]
 
 # Built-in LightRAG provider. The exact release is intentional: the adapter
 # isolates a private source-resolver seam and locks it with smoke tests.
-# MinerU remains an independently selected DeepTutor parser and is not a
+# MinerU remains an independently selected PathMind parser and is not a
 # transitive dependency of this extra.
 rag-lightrag = ["lightrag-hku==1.5.7"]
 
@@ -265,7 +265,7 @@ rag-rerank = ["sentence-transformers>=3.0.0,<6.0.0; python_version < '3.14'"]
 
 # Dev/test tooling. Mirrors requirements/dev.txt.
 dev = [
-    "deeptutor[server]",
+    "pathmind[server]",
     "pytest>=7.0.0",
     "pytest-asyncio>=0.23.0",
     "pre-commit>=3.0.0",
@@ -283,30 +283,30 @@ dev = [
 
 # Everything: server + partners + non-E2EE matrix + math-animator + dev tools.
 all = [
-    "deeptutor[partners]",
-    "deeptutor[matrix]",
-    "deeptutor[math-animator]",
-    "deeptutor[dev]",
-    "deeptutor[video-learning]",
+    "pathmind[partners]",
+    "pathmind[matrix]",
+    "pathmind[math-animator]",
+    "pathmind[dev]",
+    "pathmind[video-learning]",
 ]
 
 [tool.setuptools]
 include-package-data = true
 
 [tool.setuptools.dynamic]
-version = {attr = "deeptutor.__version__.__version__"}
+version = {attr = "pathmind.__version__.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["deeptutor*", "deeptutor_cli*"]
+include = ["pathmind*"]
 
 [tool.setuptools.package-data]
-# Runtime data shipped inside the deeptutor package: prompt YAMLs (loaded by
-# PromptManager from PACKAGE_ROOT/deeptutor/.../prompts/*.yaml), markdown
+# Runtime data shipped inside the pathmind package: prompt YAMLs (loaded by
+# PromptManager from PACKAGE_ROOT/pathmind/.../prompts/*.yaml), markdown
 # templates (builtin SKILL.md files, vision_solver prompts), and helper shell
-# scripts. Without these, ``pip install deeptutor`` ships a wheel missing
+# scripts. Without these, ``pip install pathmind`` ships a wheel missing
 # every agent prompt and capability fails at first use.
-deeptutor = [
+pathmind = [
     "**/*.yaml",
     "**/*.yml",
     "**/*.md",
@@ -315,8 +315,6 @@ deeptutor = [
     "**/*.j2",
     "**/*.jinja",
 ]
-deeptutor_cli = ["**/*.md"]
-deeptutor_web = ["**/*", ".next/**/*"]
 
 # ============================================
 # Black code formatter configuration
@@ -446,7 +444,7 @@ line-ending = "auto"
 # Ruff import sorting (isort replacement)
 # ============================================
 [tool.ruff.lint.isort]
-known-first-party = ["deeptutor", "deeptutor_cli", "scripts"]
+known-first-party = ["pathmind", "scripts"]
 force-sort-within-sections = true
 split-on-trailing-comma = true
 
@@ -469,12 +467,12 @@ max-complexity = 10
 # Pytest configuration
 # ============================================
 [tool.pytest.ini_options]
-testpaths = ["tests", "deeptutor/learning/tests"]
+testpaths = ["tests", "pathmind/learning/tests"]
 pythonpath = ["."]
 markers = [
     "asyncio: mark async tests that require pytest-asyncio",
     "integration: requires explicitly configured external services",
-    "redis_integration: requires DEEPTUTOR_TEST_REDIS_URL",
+    "redis_integration: requires PATHMIND_TEST_REDIS_URL",
     "real_llm_resolver: exercises LLM config resolution itself, so it keeps the real resolver",
 ]
 asyncio_default_fixture_loop_scope = "function"
@@ -511,7 +509,7 @@ module = "tests.*"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = "deeptutor.tools.*"
+module = "pathmind.tools.*"
 ignore_errors = true  # Some tools may have dynamic imports
 
 # ============================================

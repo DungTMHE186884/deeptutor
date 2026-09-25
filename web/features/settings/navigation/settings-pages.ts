@@ -1,4 +1,4 @@
-import { Activity, Archive, BarChart3, Bot, Settings2 } from 'lucide-react'
+import { Activity, Archive, CreditCard, Settings2, UserRound } from 'lucide-react'
 import {
   SETTINGS_CATEGORIES,
   isSettingsCategoryVisible,
@@ -11,10 +11,13 @@ import type { LucideIcon } from 'lucide-react'
 import type { SettingsAccess } from './settings-access'
 
 export const SETTINGS_PAGE_GROUPS: { label: Lang; keys: string[] }[] = [
-  { label: { en: 'Personal', zh: '个人' }, keys: ['general', 'workspace', 'data-migration', 'appearance', 'usage'] },
+  {
+    label: { en: 'Personal', zh: '个人' },
+    keys: ['profile', 'billing', 'general', 'appearance'],
+  },
   {
     label: { en: 'Learning & conversation', zh: '学习与对话' },
-    keys: ['starters', 'attachments', 'video-learning', 'learner-profile', 'guardian', 'memory'],
+    keys: ['starters', 'video-learning', 'memory'],
   },
   {
     label: { en: 'Models & services', zh: '模型与服务' },
@@ -22,11 +25,11 @@ export const SETTINGS_PAGE_GROUPS: { label: Lang; keys: string[] }[] = [
   },
   {
     label: { en: 'Features & integrations', zh: '功能与集成' },
-    keys: ['tools', 'capabilities', 'agent-claude-code', 'knowledge'],
+    keys: ['tools', 'capabilities', 'knowledge'],
   },
   {
     label: { en: 'System', zh: '系统' },
-    keys: ['network', 'status', 'about'],
+    keys: ['network', 'workspace', 'data-migration', 'status'],
   },
   { label: { en: 'Archived', zh: '已归档' }, keys: ['archive'] },
 ]
@@ -51,9 +54,7 @@ export function isWideSettingsPage(key: string): boolean {
 }
 
 /** Related service pages share a compact navigation row, with explicit tabs. */
-export const SETTINGS_PAGE_FAMILIES: string[][] = [
-  SETTINGS_CATEGORIES.find(category => category.key === 'agents')!.children!.map(leaf => leaf.key),
-]
+export const SETTINGS_PAGE_FAMILIES: string[][] = []
 
 export function settingsPageFamily(key: string): string[] {
   return SETTINGS_PAGE_FAMILIES.find(family => family.includes(key)) ?? [key]
@@ -61,21 +62,36 @@ export function settingsPageFamily(key: string): string[] {
 
 const extraPages: SettingsLeaf[] = [
   {
+    key: 'profile',
+    label: { en: 'Profile', zh: '个人资料' },
+    blurb: { en: 'Your account and avatar', zh: '你的账号与头像' },
+    icon: UserRound,
+    href: '/settings/profile',
+    tile: '',
+    authOnly: true,
+  },
+  {
+    key: 'billing',
+    label: { en: 'Plans & billing', zh: '套餐与账单' },
+    blurb: {
+      en: 'Subscription, credits, storage and payment history',
+      zh: '订阅、额度、存储与付款记录',
+    },
+    icon: CreditCard,
+    href: '/settings/billing',
+    tile: '',
+    authOnly: true,
+  },
+  {
     key: 'data-migration',
     label: { en: 'Data migration', zh: '数据迁移' },
     blurb: { en: 'Discover, migrate and export learning data', zh: '查找、迁移和导出学习数据' },
     icon: Archive,
     href: '/settings/data-migration',
     tile: '',
+    adminOnly: true,
   },
-  {
-    key: 'usage',
-    label: { en: 'Usage statistics', zh: '用量统计' },
-    blurb: { en: 'Model usage and conversation activity', zh: '模型用量与对话活跃情况' },
-    icon: BarChart3,
-    href: '/settings/usage',
-    tile: '',
-  },
+
   {
     key: 'archive',
     label: { en: 'Archived chats', zh: '已归档的聊天' },
@@ -108,12 +124,13 @@ const extraPages: SettingsLeaf[] = [
     icon: Activity,
     href: '/settings/status',
     tile: '',
+    adminOnly: true,
   },
 ]
 
 export function visibleSettingsPages(access: SettingsAccess): SettingsLeaf[] {
   return [
-    ...extraPages,
+    ...extraPages.filter(leaf => isSettingsLeafVisible(leaf, access)),
     ...SETTINGS_CATEGORIES.filter(category => isSettingsCategoryVisible(category, access))
       .flatMap(category => category.children ?? [{ ...category, tile: '' }])
       .filter(
@@ -124,25 +141,13 @@ export function visibleSettingsPages(access: SettingsAccess): SettingsLeaf[] {
 
 export function settingsPageLabel(key: string, fallback: Lang): Lang {
   if (key === 'llm') return { en: 'Language models', zh: '语言模型' }
-  if (key === 'agent-claude-code') return { en: 'Partners & agents', zh: '伙伴与智能体' }
   if (key === 'starters') return { en: 'Conversation', zh: '对话' }
   if (key === 'connections') return { en: 'Providers', zh: '提供方' }
   if (key === 'knowledge') return { en: 'Knowledge & documents', zh: '知识与文档' }
   return fallback
 }
 
-/**
- * Icon for a page as the navigation shows it.
- *
- * The counterpart to ``settingsPageLabel``: where a row stands for a whole
- * family it is titled for the family, so it cannot also wear one member's
- * brand mark. "Partners & agents" carried Claude Code's orange glyph — the one
- * saturated mark in a column of neutral line icons, and wrong about the page,
- * which configures every partner. Search results address the leaf itself and
- * keep the vendor glyph, matching the label they show.
- */
 export function settingsPageIcon(key: string, fallback: LucideIcon): LucideIcon {
-  if (key === 'agent-claude-code') return Bot
   return fallback
 }
 

@@ -11,8 +11,9 @@ import {
 /**
  * Runtime chat-attachment limits.
  *
- * The caps live in `data/user/settings/system.json` (editable at
- * /settings#attachments) and are enforced server-side on every message; the
+ * The system-wide ceiling lives in `data/user/settings/system.json`; the
+ * per-file cap is narrowed by the user's subscription plan ("Kích thước tệp
+ * tối đa" in /admin/plans). Both are enforced server-side on every message; the
  * composer mirrors them client-side so oversized picks are rejected before a
  * pointless upload. Defaults apply until the fetch resolves — they match the
  * backend defaults, so a pre-hydration pick is never gated more loosely than

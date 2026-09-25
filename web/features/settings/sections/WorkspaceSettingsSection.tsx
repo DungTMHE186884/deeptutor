@@ -11,6 +11,7 @@ import {
   getWorkspaceCatalog, saveWorkspace, migrateWorkspace, workspaceChatHref, inheritedWorkspaceResources,
   type WorkspaceCatalog, type ChatWorkspaceRegistration,
 } from '@/lib/workspaces-api'
+import { confirmAction } from '@/lib/confirm'
 
 type RunAction = (action: () => Promise<unknown>) => Promise<boolean>
 const actionClass = 'inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-xs text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)] disabled:opacity-50'
@@ -42,7 +43,10 @@ function WorkspaceRow({ row, run, busy }: { row: ChatWorkspaceRegistration; run:
           {row.kind !== 'system' && !row.archived && <button type="button" className={actionClass} onClick={() => { setResources(row.resources ?? inheritedWorkspaceResources()); setResourcesOpen(!resourcesOpen) }}><Settings2 size={14} />{t('Assigned resources')}</button>}
           {custom && <button type="button" className={actionClass} aria-label={t('Rename workspace')} title={t('Rename workspace')} onClick={() => { setName(row.display_name); setEditing(!editing); setMoving(false) }}><Pencil size={14} /></button>}
           <button type="button" className={actionClass} aria-label={t('Move folder')} title={t('Move folder')} onClick={() => { setMoving(!moving); setEditing(false); setDestination('') }}><FolderInput size={14} /></button>
-          {custom && <button type="button" className={actionClass} aria-label={row.archived ? t('Restore workspace') : t('Archive workspace')} title={row.archived ? t('Restore workspace') : t('Archive workspace')} onClick={() => void run(() => saveWorkspace({ archived: !row.archived }, row.workspace_id))}>{row.archived ? <ArchiveRestore size={14} /> : <Archive size={14} />}</button>}
+          {custom && <button type="button" className={actionClass} aria-label={row.archived ? t('Restore workspace') : t('Archive workspace')} title={row.archived ? t('Restore workspace') : t('Archive workspace')} onClick={async () => {
+            if (!row.archived && !(await confirmAction(t('Archive this workspace?')))) return;
+            void run(() => saveWorkspace({ archived: !row.archived }, row.workspace_id));
+          }}>{row.archived ? <ArchiveRestore size={14} /> : <Archive size={14} />}</button>}
         </div>
       </div>
       <div className="mt-1.5 min-w-0 sm:pl-[30px]">

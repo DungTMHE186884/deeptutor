@@ -1,5 +1,6 @@
 "use client";
 
+import { UserMenu } from "@/components/auth/UserMenu";
 import { navigateTask, selectWorkspace } from "@/lib/workspace-scope";
 import { sessionWorkspaceId } from "@/lib/session-api";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -9,9 +10,6 @@ import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { SidebarShell } from "@/components/sidebar/SidebarShell";
 import { reconcileUnread } from "@/lib/session-unread";
-import { LogoutButton } from "@/components/auth/LogoutButton";
-import { AdminLink } from "@/components/auth/AdminLink";
-import { ProfileLink } from "@/components/auth/ProfileLink";
 import { useChatStateAdapter } from "@/features/chat/ChatStateAdapter";
 import {
   deleteSession,
@@ -32,6 +30,7 @@ import {
 } from "@/lib/learning-api";
 import { sessionRoute } from "@/lib/mastery-session";
 import { subscribeSessionChanges } from "@/lib/session-events";
+import { confirmAction } from "@/lib/confirm";
 
 export default function WorkspaceSidebar() {
   const { t } = useTranslation();
@@ -182,7 +181,7 @@ export default function WorkspaceSidebar() {
 
   const handleDeleteSession = useCallback(
     async (sessionId: string) => {
-      if (!window.confirm(t("Permanently delete this chat and its tutor threads? This cannot be undone."))) return;
+      if (!(await confirmAction(t("Permanently delete this chat and its tutor threads? This cannot be undone."), { tone: "danger" }))) return;
       await deleteSession(sessionId, sessionWorkspaceId(sessions.find(item => item.session_id === sessionId)));
       setSessions((prev) =>
         prev.filter((session) => session.session_id !== sessionId),
@@ -239,13 +238,7 @@ export default function WorkspaceSidebar() {
       onRenameSession={handleRenameSession}
       onDeleteSession={handleDeleteSession}
       onOrganizeSession={handleOrganizeSession}
-      footerSlot={(collapsed) => (
-        <>
-          <ProfileLink collapsed={collapsed} />
-          <AdminLink collapsed={collapsed} />
-          <LogoutButton collapsed={collapsed} />
-        </>
-      )}
+      footerSlot={(collapsed) => <UserMenu collapsed={collapsed} />}
     />
   );
 }

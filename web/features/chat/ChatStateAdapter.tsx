@@ -2520,10 +2520,6 @@ export function ChatStateAdapterProvider({
             : null,
         consultPartnerId: typeof consultPartnerId === "string" ? consultPartnerId : null,
         partnerDiscussionGroupId: typeof partnerDiscussionGroupId === "string" ? partnerDiscussionGroupId : null,
-        subagentConsultBudget:
-          typeof subagentConsultBudget === "number"
-            ? subagentConsultBudget
-            : null,
         autoRoute: typeof autoRoute === "boolean" ? autoRoute : null,
         attachments: effectiveAttachments,
         language: effectiveLanguage,

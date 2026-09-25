@@ -11,7 +11,25 @@ export default function ThemeScript() {
   const themeScript = `
     (function() {
       try {
-        const stored = localStorage.getItem('deeptutor-theme');
+        // One-time carry-over of browser preferences saved before the
+        // DeepTutor -> PathMind rename (theme, sidebar layout, drafts, ...).
+        if (!localStorage.getItem('pathmind-storage-migrated')) {
+          const oldKeys = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.toLowerCase().indexOf('deeptutor') === 0) oldKeys.push(key);
+          }
+          oldKeys.forEach(function (key) {
+            const value = localStorage.getItem(key);
+            if (value !== null) {
+              localStorage.setItem('pathmind' + key.slice('deeptutor'.length), value);
+            }
+            localStorage.removeItem(key);
+          });
+          localStorage.setItem('pathmind-storage-migrated', '1');
+        }
+
+        const stored = localStorage.getItem('pathmind-theme');
 
         document.documentElement.classList.remove('dark', 'theme-glass', 'theme-snow');
 
@@ -24,15 +42,10 @@ export default function ThemeScript() {
         } else if (stored === 'light') {
           // already clean
         } else {
-          // No stored preference: Default (snow) for light systems,
-          // Dark for prefers-color-scheme: dark.
-          if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            document.documentElement.classList.add('dark');
-            localStorage.setItem('deeptutor-theme', 'dark');
-          } else {
-            document.documentElement.classList.add('theme-snow');
-            localStorage.setItem('deeptutor-theme', 'snow');
-          }
+          // No cached theme (first visit or signed out): the app default.
+          // AccountThemeSync then applies the account's own theme, or the
+          // deployment default for visitors who are not signed in.
+          document.documentElement.classList.add('theme-snow');
         }
       } catch (e) {
         /* localStorage may be disabled */

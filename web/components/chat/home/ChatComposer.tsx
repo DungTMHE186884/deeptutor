@@ -51,7 +51,6 @@ import ChatSpaceMenu from "@/components/chat/space/ChatSpaceMenu";
 import type { SpaceMemoryFile } from "@/lib/space-items";
 import type { SelectedBookReference } from "@/lib/book-references";
 import type { SelectedReadingReference } from "@/lib/reading-references";
-import AgentSelector from "./AgentSelector";
 import PartnerSelector from "./PartnerSelector";
 import { listPartners, type PartnerInfo } from "@/lib/partners-api";
 import PartnerGroupSelector from "./PartnerGroupSelector";
@@ -317,7 +316,7 @@ export default memo(function ChatComposer({
   onSelectPartnerGroup?: (id: string | null) => void;
   selectedAgent?: string | null;
   onSelectAgent?: (name: string | null) => void;
-  /** Max times DeepTutor may consult the selected agent this turn. */
+  /** Max times PathMind may consult the selected agent this turn. */
   subagentBudget?: number | null;
   onSubagentBudgetChange?: (budget: number) => void;
   llmOptions: LLMOption[];
@@ -536,10 +535,10 @@ export default memo(function ChatComposer({
         ),
       );
     };
-    window.addEventListener("deeptutor:before-workspace-switch", save);
+    window.addEventListener("pathmind:before-workspace-switch", save);
     return () => {
       alive = false;
-      window.removeEventListener("deeptutor:before-workspace-switch", save);
+      window.removeEventListener("pathmind:before-workspace-switch", save);
     };
   }, []);
   if (lastCapMenuOpen !== capMenuOpen) {
@@ -703,7 +702,6 @@ export default memo(function ChatComposer({
     ...(personaSelection ? [{key:"persona-scope",icon:UserRound,kind:t("Response style"),label:personaSelection,onRemove:()=>onPersonaSelectionChange?.("")}] : []),
     ...(selectedPartner ? [{ key: "partner-current", icon: UserRound, kind: t("Ask partner"), label: partnerName!, onRemove: () => onSelectPartner?.(null) }] : []),
     ...(selectedPartnerGroup ? [{ key: "partner-group-current", icon: Users, kind: t("Organize partner discussion"), label: partnerGroupName!, onRemove: () => onSelectPartnerGroup?.(null) }] : []),
-    ...(selectedAgent ? [{key:"collaborator-current",icon:Bot,kind:t("Ask subagent"),label:selectedAgent,onRemove:()=>onSelectAgent?.(null)}] : []),
     ...(resourceSelection?.skills || []).map((id): ContextTreeItem=>({key:`skill-${id}`,icon:Wand2,kind:t("Skills"),label:resourceCatalog?.skills.find(option=>option.id===id)?.name || id,onRemove:()=>onResourceSelectionChange?.({...resourceSelection!,skills:resourceSelection!.skills.filter(value=>value!==id)})})),
     ...(resourceSelection?.mcp || []).map((id): ContextTreeItem=>({key:`mcp-${id}`,icon:Plug,kind:t("MCP"),label:resourceCatalog?.mcp.find(option=>option.id===id)?.name || id,onRemove:()=>onResourceSelectionChange?.({...resourceSelection!,mcp:resourceSelection!.mcp.filter(value=>value!==id)})})),
 
@@ -911,27 +909,7 @@ export default memo(function ChatComposer({
     });
   }
 
-  if (onSelectAgent) {
-    resourceItems.push({
-      key: "agent",
-      group: "Answer preferences",
-      summary: selectedAgent || t("None"),
-      onClear: () => onSelectAgent(null),
-      label: t("Ask subagent"),
-      icon: Bot,
-      count: selectedAgent ? 1 : 0,
-      node: (
-        <AgentSelector
-          agents={connectedAgents}
-          selected={selectedAgent}
-          onSelect={onSelectAgent}
-          budget={subagentBudget}
-          onBudgetChange={onSubagentBudgetChange}
-          embedded
-        />
-      ),
-    });
-  }
+
 
   if (onSelectPartner) {
     resourceItems.push({

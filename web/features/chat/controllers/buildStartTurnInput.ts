@@ -16,7 +16,6 @@ const RUNTIME_ONLY_CONFIG_KEYS = new Set([
   "auto_route",
   "followup_question_context",
   "selection_tutor_context",
-  "subagent_consult_budget",
   "consult_partner_id",
   "partner_discussion_group_id",
 ]);
@@ -50,9 +49,6 @@ function capabilityConfig(input: StartTurnInput): Record<string, unknown> {
 
 export function buildStartTurnInput(input: StartTurnInput): StartTurnCommand {
   if (!input.content.trim()) invalid("Turn content must not be empty");
-  if (input.subagentConsultBudget != null && input.subagentConsultBudget < 0) {
-    invalid("Subagent consult budget must be non-negative");
-  }
   if (
     input.readingMaterialRevision != null &&
     input.readingMaterialRevision < 1
@@ -110,7 +106,6 @@ export function buildStartTurnInput(input: StartTurnInput): StartTurnCommand {
     superseded_turn_id: input.supersededTurnId ?? null,
     followup_question_context: input.followupQuestionContext ?? null,
     selection_tutor_context: input.selectionTutorContext ?? null,
-    subagent_consult_budget: input.subagentConsultBudget ?? null,
     ...(input.consultPartnerId ? { consult_partner_id: input.consultPartnerId } : {}),
     ...(input.partnerDiscussionGroupId ? { partner_discussion_group_id: input.partnerDiscussionGroupId } : {}),
     auto_route: input.autoRoute ?? null,

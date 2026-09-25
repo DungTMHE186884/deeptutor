@@ -1,17 +1,13 @@
 "use client";
 
-import { browserStorage } from "@/shared/storage";
-
 /**
  * The workspace feature list — the part of the sidebar a learner owns.
  *
- * Every learner uses a different half of DeepTutor, so the shipped list is a
+ * Every learner uses a different half of PathMind, so the shipped list is a
  * starting point rather than a layout: rows can be dragged into the order the
- * work actually happens in, and the ones this learner never opens fold away
- * into "More" instead of sitting in the way. The arrangement is a per-machine
- * view preference (``lib/sidebar-layout.ts``), and no feature is ever lost —
- * folding moves it one click away, it does not remove it, and the collapsed
- * rail keeps its own way to reach the folded ones.
+ * work actually happens in. Every feature is always listed (there is no
+ * "More" group). The order is a per-machine view preference
+ * (``lib/sidebar-layout.ts``).
  */
 
 import Link from "next/link";
@@ -27,20 +23,12 @@ import {
   type RefObject,
 } from "react";
 import { createPortal } from "react-dom";
-import {
-  ArrowDownToLine,
-  ArrowUpFromLine,
-  ChevronDown,
-  Lock,
-  MoreHorizontal,
-  RotateCcw,
-} from "lucide-react";
+import { Lock, MoreHorizontal, RotateCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { useCapabilityAccess } from "@/components/access/CapabilityAccessContext";
 import {
   NAV_BY_HREF,
-  DEFAULT_COLLAPSED_NAV,
   PRIMARY_NAV_HREFS,
   isNavActive,
 } from "@/components/sidebar/nav-entries";
@@ -51,25 +39,16 @@ import {
   readNavLayout,
   reorderNavSection,
   resolveNavLayout,
-  setNavCollapsed,
   writeNavLayout,
   type SidebarNavLayout,
 } from "@/lib/sidebar-layout";
 
 const MODULE_NAV_HREFS = PRIMARY_NAV_HREFS.filter((href) => href !== "/chat");
 
-const MORE_EXPANDED_KEY = "deeptutor.sidebar.moreExpanded";
-/** One curve and one duration for every part of the "More" disclosure, so the
- *  caret, the height and the count settle on the same beat. The curve is a
- *  fast-out/long-settle ease — the same shape sheet UIs use — which reads as
- *  crisper than ``ease-out`` at this size. */
-const EASE_CLASS =
-  "duration-[220ms] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none";
 const MENU_WIDTH = 210;
 
 interface RowMenu {
   href: string;
-  folded: boolean;
   position: FloatingMenuPosition;
 }
 
@@ -94,7 +73,6 @@ export function SidebarNav({
   const { has } = useCapabilityAccess();
 
   const [layout, setLayout] = useState<SidebarNavLayout | null>(null);
-  const [moreExpanded, setMoreExpanded] = useState(false);
   const [menu, setMenu] = useState<RowMenu | null>(null);
   const [railMenu, setRailMenu] = useState<FloatingMenuPosition | null>(null);
   const menuRootRef = useRef<HTMLDivElement>(null);
@@ -106,11 +84,17 @@ export function SidebarNav({
     if (typeof window === "undefined") return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLayout(readNavLayout());
-    setMoreExpanded(browserStorage.readRaw("local", MORE_EXPANDED_KEY) === "1");
   }, []);
 
   const resolved = useMemo(
-    () => resolveNavLayout(MODULE_NAV_HREFS, layout, DEFAULT_COLLAPSED_NAV),
+    // Folding into "More" is gone: ignore any stored folded list so every
+    // feature (Co-Writer included) is always visible.
+    () =>
+      resolveNavLayout(
+        MODULE_NAV_HREFS,
+        layout ? { order: layout.order, collapsed: [] } : null,
+        [],
+      ),
     [layout],
   );
   /** Always edit the resolved order: the stored one may still be empty. */
@@ -122,13 +106,6 @@ export function SidebarNav({
   const applyLayout = useCallback((next: SidebarNavLayout) => {
     setLayout(next);
     writeNavLayout(next);
-  }, []);
-
-  const showMore = useCallback((next: boolean) => {
-    setMoreExpanded(next);
-    if (typeof window !== "undefined") {
-      browserStorage.writeRaw("local", MORE_EXPANDED_KEY, next ? "1" : "0");
-    }
   }, []);
 
   const closeMenus = useCallback(() => {
@@ -144,14 +121,6 @@ export function SidebarNav({
     onReorder: (next) =>
       applyLayout(reorderNavSection(editable, resolved.visible, next)),
   });
-  const foldedDrag = useDragSort({
-    ids: resolved.collapsed,
-    disabled: collapsed,
-    scrollRef,
-    onReorder: (next) =>
-      applyLayout(reorderNavSection(editable, resolved.collapsed, next)),
-  });
-
   useEffect(() => {
     if (!menu && !railMenu) return;
     const closeOutside = (event: MouseEvent) => {
@@ -192,8 +161,7 @@ export function SidebarNav({
 
   /* ---- Icon-only rail ----
    * No arranging here: the rail is 60px of icons with no room for a menu or a
-   * drop target. It honours the order and the folding, and reaches the folded
-   * features through one overflow button so nothing becomes unreachable. */
+   * drop target. It honours the saved order and shows every feature. */
   if (collapsed) {
     return (
       <nav className="mt-1 flex w-full flex-col items-center gap-1 px-1.5">
@@ -207,90 +175,13 @@ export function SidebarNav({
             onHomeClick={onHomeClick}
           />
         ))}
-        {resolved.collapsed.length > 0 ? (
-          <Tooltip label={t("More")} side="right">
-            <button
-              type="button"
-              onClick={(event) => {
-                if (railMenu) {
-                  closeMenus();
-                  return;
-                }
-                menuAnchorRef.current = event.currentTarget;
-                setRailMenu(
-                  placeMenu(
-                    event.currentTarget.getBoundingClientRect(),
-                    MENU_WIDTH,
-                  ),
-                );
-              }}
-              aria-label={t("More")}
-              aria-haspopup="menu"
-              aria-expanded={Boolean(railMenu)}
-              className={`flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-150 ${
-                railMenu
-                  ? "bg-[var(--accent)] text-[var(--foreground)]"
-                  : "text-foreground/60 hover:bg-background/60 hover:text-[var(--foreground)]"
-              }`}
-            >
-              <MoreHorizontal size={18} strokeWidth={1.6} />
-            </button>
-          </Tooltip>
-        ) : null}
-        {railMenu && typeof document !== "undefined"
-          ? createPortal(
-              <FloatingPanel
-                ref={menuRootRef}
-                position={railMenu}
-                label={t("More")}
-              >
-                {resolved.collapsed.map((href) => {
-                  const entry = NAV_BY_HREF.get(href);
-                  if (!entry) return null;
-                  const locked = isLocked(href);
-                  const Icon = entry.icon;
-                  return locked ? (
-                    <span
-                      key={href}
-                      aria-disabled
-                      className="flex cursor-not-allowed items-center gap-2 rounded-lg px-2 py-1.5 text-muted-foreground/45"
-                    >
-                      <Icon size={14} strokeWidth={1.6} />
-                      <span className="min-w-0 flex-1 truncate">
-                        {t(entry.label)}
-                      </span>
-                      <Lock size={11} strokeWidth={1.8} />
-                    </span>
-                  ) : (
-                    <Link
-                      key={href}
-                      href={href}
-                      onClick={(event) => {
-                        closeMenus();
-                        if (href === "/chat") onHomeClick(event);
-                        else onNavigate(event);
-                      }}
-                      role="menuitem"
-                      className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"
-                    >
-                      <Icon size={14} strokeWidth={1.6} />
-                      <span className="min-w-0 flex-1 truncate">
-                        {t(entry.label)}
-                      </span>
-                    </Link>
-                  );
-                })}
-              </FloatingPanel>,
-              document.body,
-            )
-          : null}
       </nav>
     );
   }
 
   /* ---- Expanded list ---- */
   const openRowMenu =
-    (href: string, folded: boolean) => (event: React.MouseEvent) => {
+    (href: string) => (event: React.MouseEvent) => {
       event.preventDefault();
       event.stopPropagation();
       if (menu?.href === href) {
@@ -302,12 +193,11 @@ export function SidebarNav({
       setRailMenu(null);
       setMenu({
         href,
-        folded,
         position: placeMenu(anchor.getBoundingClientRect(), MENU_WIDTH),
       });
     };
 
-  const renderRow = (href: string, drag: DragSort, folded: boolean) => {
+  const renderRow = (href: string, drag: DragSort) => {
     const entry = NAV_BY_HREF.get(href);
     if (!entry) return null;
     const active = isNavActive(pathname, href);
@@ -370,11 +260,12 @@ export function SidebarNav({
             {body}
           </Link>
         )}
+        {resolved.customized ? (
         <button
           key={`${href}-arrange`}
           type="button"
           data-no-drag
-          onClick={openRowMenu(href, folded)}
+          onClick={openRowMenu(href)}
           aria-label={t("Arrange {{feature}}", { feature: label })}
           aria-haspopup="menu"
           aria-expanded={menuOpen}
@@ -386,6 +277,7 @@ export function SidebarNav({
         >
           <MoreHorizontal size={13} />
         </button>
+        ) : null}
       </div>
     );
   };
@@ -394,82 +286,9 @@ export function SidebarNav({
     <nav className="px-2 pt-1">
       <div className="space-y-px">
         {resolved.visible.map((href) => (
-          <Fragment key={href}>{renderRow(href, visibleDrag, false)}</Fragment>
+          <Fragment key={href}>{renderRow(href, visibleDrag)}</Fragment>
         ))}
       </div>
-
-      {resolved.collapsed.length > 0 ? (
-        <div className="mt-1">
-          {/* A group heading, not a ninth feature: it sits a step down from the
-              rows above it in size, weight and hover, and its caret rides a
-              15px slot so the label still lands on the same 33px text column
-              the features do. */}
-          <button
-            type="button"
-            onClick={() => showMore(!moreExpanded)}
-            aria-expanded={moreExpanded}
-            // Grey by default, foreground on hover. Colour alone carries the
-            // hover here — no surface tint, unlike the feature rows above — so
-            // the heading stays a step below them instead of reading as a
-            // ninth row.
-            className="group/more flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-[12px] text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]"
-          >
-            <span className="flex w-[15px] shrink-0 items-center justify-center">
-              <ChevronDown
-                size={13}
-                strokeWidth={1.8}
-                className={`${EASE_CLASS} transition-transform ${moreExpanded ? "" : "-rotate-90"}`}
-              />
-            </span>
-            <span className="min-w-0 flex-1 truncate text-left">
-              {t("More")}
-            </span>
-            {/* Fades and shrinks away rather than vanishing — the count answers
-                "how much is hidden", a question the open group answers itself. */}
-            <span
-              aria-hidden={moreExpanded}
-              className={`${EASE_CLASS} shrink-0 text-[10.5px] tabular-nums transition-all ${
-                moreExpanded
-                  ? "scale-75 opacity-0"
-                  : "opacity-45 group-hover/more:opacity-70"
-              }`}
-            >
-              {resolved.collapsed.length}
-            </span>
-          </button>
-          <div
-            inert={!moreExpanded}
-            aria-hidden={!moreExpanded}
-            className={`${EASE_CLASS} grid transition-[grid-template-rows] ${
-              moreExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-            }`}
-          >
-            {/* Clipping is what gives the row its height animation, but it
-                would also shear the row lifted out of this list by a drag —
-                so the drag turns it off, by which point the group is open and
-                there is nothing left to clip. */}
-            <div
-              className={
-                foldedDrag.draggingId ? "overflow-visible" : "overflow-hidden"
-              }
-            >
-              {/* The rows fade in a beat after the group starts opening, so it
-                  reads as a door opening rather than a block appearing. */}
-              <div
-                className={`space-y-px pt-px transition-opacity duration-150 motion-reduce:transition-none ${
-                  moreExpanded ? "opacity-100 delay-[80ms]" : "opacity-0"
-                }`}
-              >
-                {resolved.collapsed.map((href) => (
-                  <Fragment key={href}>
-                    {renderRow(href, foldedDrag, true)}
-                  </Fragment>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
 
       {menu && typeof document !== "undefined"
         ? createPortal(
@@ -479,34 +298,13 @@ export function SidebarNav({
               label={t("Arrange sidebar")}
             >
               <MenuRow
-                icon={menu.folded ? ArrowUpFromLine : ArrowDownToLine}
-                label={menu.folded ? t("Move out of More") : t("Move to More")}
+                icon={RotateCcw}
+                label={t("Reset sidebar order")}
                 onClick={() => {
-                  applyLayout(
-                    setNavCollapsed(editable, menu.href, !menu.folded),
-                  );
-                  // Folding something shows where it went; unfolding leaves the
-                  // group open so the next one is one click away.
-                  showMore(true);
+                  applyLayout({ order: [...PRIMARY_NAV_HREFS], collapsed: [] });
                   closeMenus();
                 }}
               />
-              {resolved.customized ? (
-                <>
-                  <div className="my-1 border-t border-border/70" />
-                  <MenuRow
-                    icon={RotateCcw}
-                    label={t("Reset sidebar order")}
-                    onClick={() => {
-                      applyLayout({
-                        order: [...PRIMARY_NAV_HREFS],
-                        collapsed: [...DEFAULT_COLLAPSED_NAV],
-                      });
-                      closeMenus();
-                    }}
-                  />
-                </>
-              ) : null}
             </FloatingPanel>,
             document.body,
           )

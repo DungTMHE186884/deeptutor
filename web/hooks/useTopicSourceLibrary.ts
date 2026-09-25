@@ -4,8 +4,6 @@ import type { LearningOrigin } from '@/lib/learning-library'
 import { apiFetch, apiUrl } from '@/lib/api'
 import { scopedUrl } from '@/lib/workspace-scope'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-
-import { SUBAGENT_KB_TYPE } from '@/lib/knowledge-helpers'
 import type { TopicSourceInput, TopicSourceKind } from '@/lib/learning-api'
 import { listNotebookEntries } from '@/lib/notebook-api'
 import { listPartnerGroups, listPartnerGroupSessions } from '@/lib/partner-groups-api'
@@ -144,9 +142,6 @@ export function useTopicSourceLibrary(tr: Translate) {
         books: rows(0).map(row => candidate(row, 'book', row.id, row.title)),
         notebooks: rows(1).map(row => candidate(row, 'notebook', row.id, row.name)),
         knowledgeBases: rows(2)
-          .filter(
-            row => (row.metadata as Record<string, unknown> | undefined)?.type !== SUBAGENT_KB_TYPE
-          )
           .map(row => ({
             ...candidate(row, 'knowledge_base', row.id || row.name, row.name),
             expandable: true,

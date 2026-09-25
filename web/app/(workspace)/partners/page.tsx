@@ -10,7 +10,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { HeartHandshake, Loader2, Plus, Users } from "lucide-react";
+import { Bot, HeartHandshake, Loader2, Plus, Users, UserCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { listPartners, type PartnerInfo } from "@/lib/partners-api";
 import { listPartnerGroups, type PartnerGroup } from "@/lib/partner-groups-api";
@@ -18,6 +18,7 @@ import { formatRelativeTime } from "@/lib/relative-time";
 import ChannelIcon from "@/components/partners/ChannelIcon";
 import { useDiscussionModeLabel } from "@/components/partners/group/DiscussionModePicker";
 import PartnerAvatar from "@/components/partners/PartnerAvatar";
+import FriendsTab from "@/components/partners/FriendsTab";
 
 function channelNames(partner: PartnerInfo): string[] {
   if (Array.isArray(partner.channels)) {
@@ -37,6 +38,7 @@ export default function PartnersPage() {
   const [partners, setPartners] = useState<PartnerInfo[]>([]);
   const [groups, setGroups] = useState<PartnerGroup[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"partners" | "friends">("partners");
   const anyAssigned = partners.some((partner) => partner.can_manage === false);
   // A group needs at least two members, so the entry point stays inert until
   // there is something to convene.
@@ -61,7 +63,7 @@ export default function PartnersPage() {
 
   return (
     <div className="mx-auto h-full max-w-4xl overflow-y-auto px-6 py-8">
-      <header className="mb-7 flex items-end justify-between gap-4">
+      <header className="mb-6 flex items-end justify-between gap-4">
         <div>
           <h1 className="text-[19px] font-semibold tracking-tight text-[var(--foreground)]">
             {t("Partners")}
@@ -76,16 +78,46 @@ export default function PartnersPage() {
                 )}
           </p>
         </div>
-        <Link
-          href="/partners/new"
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[var(--primary)] px-3.5 py-2 text-[12.5px] font-medium text-[var(--primary-foreground)] hover:opacity-90"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          {t("New partner")}
-        </Link>
+        {activeTab === "partners" && (
+          <Link
+            href="/partners/new"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[var(--primary)] px-3.5 py-2 text-[12.5px] font-medium text-[var(--primary-foreground)] hover:opacity-90"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            {t("New partner")}
+          </Link>
+        )}
       </header>
 
-      {loading ? (
+      {/* Tabs */}
+      <div className="mb-6 flex border-b border-[var(--border)]">
+        <button
+          onClick={() => setActiveTab("partners")}
+          className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-[13px] font-medium transition-colors ${
+            activeTab === "partners"
+              ? "border-[var(--primary)] text-[var(--foreground)]"
+              : "border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+          }`}
+        >
+          <Bot className="h-4 w-4" />
+          {t("AI Partners & Groups")}
+        </button>
+        <button
+          onClick={() => setActiveTab("friends")}
+          className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-[13px] font-medium transition-colors ${
+            activeTab === "friends"
+              ? "border-[var(--primary)] text-[var(--foreground)]"
+              : "border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+          }`}
+        >
+          <Users className="h-4 w-4" />
+          {t("Bạn Bè & Học Nhóm Multiplayer")}
+        </button>
+      </div>
+
+      {activeTab === "friends" ? (
+        <FriendsTab />
+      ) : loading ? (
         <div className="flex min-h-[320px] items-center justify-center">
           <Loader2 className="h-5 w-5 animate-spin text-[var(--muted-foreground)]" />
         </div>

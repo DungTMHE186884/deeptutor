@@ -16,8 +16,8 @@ export function WorkspaceSwitcher() {
   const [draftError, setDraftError] = useState(false)
   useEffect(() => {
     const failed = () => setDraftError(true)
-    window.addEventListener('deeptutor:workspace-switch-error', failed)
-    return () => window.removeEventListener('deeptutor:workspace-switch-error', failed)
+    window.addEventListener('pathmind:workspace-switch-error', failed)
+    return () => window.removeEventListener('pathmind:workspace-switch-error', failed)
   }, [])
   return (
     <div className="mx-3 mb-2 rounded-lg border border-[var(--border)] px-2 py-1.5">

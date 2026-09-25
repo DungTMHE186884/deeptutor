@@ -43,6 +43,7 @@ import {
   type SessionOrganizationPatch,
   type SessionSummary,
 } from "@/lib/session-api";
+import { confirmAction } from "@/lib/confirm";
 
 export default function CourseDetailPage() {
   const { t } = useTranslation();
@@ -168,7 +169,7 @@ export default function CourseDetailPage() {
 
   const removeSession = useCallback(
     async (sessionId: string) => {
-      if (!window.confirm(t("Permanently delete this chat and its tutor threads? This cannot be undone."))) return;
+      if (!(await confirmAction(t("Permanently delete this chat and its tutor threads? This cannot be undone."), { tone: "danger" }))) return;
       await deleteSession(sessionId);
       await load();
     },

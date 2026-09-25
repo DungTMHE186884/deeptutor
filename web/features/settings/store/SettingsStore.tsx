@@ -27,7 +27,7 @@ import { apiFetch, apiUrl } from "@/lib/api";
 import { invalidateLLMOptionsCache } from "@/lib/llm-options";
 import { setModelReasoningEffort } from "@/lib/reasoning-effort";
 import { applyExtensionPayload } from "@/lib/settings-extensions";
-import { setTheme as applyThemePreference } from "@/lib/theme";
+import { getStoredTheme, setTheme as applyThemePreference } from "@/lib/theme";
 import {
   detachProfileConnection,
   modelTestKey,
@@ -184,7 +184,7 @@ type SettingsPayload = {
   task_kinds?: TaskKindInfo[];
 };
 
-const DIAGNOSTICS_RESULTS_KEY = "deeptutor.settings.diagnosticsResults.v1";
+const DIAGNOSTICS_RESULTS_KEY = "pathmind.settings.diagnosticsResults.v1";
 
 // ─── Tour ──────────────────────────────────────────────────────────────────
 //
@@ -507,7 +507,7 @@ export type SettingsContextValue = {
 
   // Connections + task models
   connectionTargets: ConnectionTarget[];
-  /** The calls DeepTutor makes on its own, in the order the backend lists them. */
+  /** The calls PathMind makes on its own, in the order the backend lists them. */
   taskKinds: TaskKindInfo[];
   connectionTarget: (provider: string) => ConnectionTarget | null;
   addConnection: (input: {
@@ -721,7 +721,19 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setSettingsError(null);
     let settingsLoaded = false;
     try {
-      const settingsResponse = await apiFetch(apiUrl("/api/settings"));
+      // The backend may be restarting (the dev proxy then answers 500/502):
+      // retry for a few seconds before showing an error.
+      let settingsResponse: Response | null = null;
+      for (let attempt = 0; attempt < 6; attempt += 1) {
+        try {
+          settingsResponse = await apiFetch(apiUrl("/api/settings"));
+          if (settingsResponse.ok || settingsResponse.status < 500) break;
+        } catch (networkError) {
+          if (attempt === 5) throw networkError;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+      }
+      if (!settingsResponse) throw new Error("Settings fetch failed: backend unreachable");
       if (!settingsResponse.ok) {
         throw new Error(
           `Settings fetch failed: HTTP ${settingsResponse.status}`,
@@ -736,6 +748,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setCatalogEditable(false);
       }
       setTheme(payload.ui.theme);
+      // The saved value is this account's theme: make the page match it so
+      // the Appearance picker never shows one theme while another is applied.
+      if (payload.ui.theme && payload.ui.theme !== getStoredTheme()) {
+        applyThemePreference(payload.ui.theme);
+      }
       setLanguage(payload.ui.language);
       const loadedResponseLanguage =
         payload.ui.response_language ?? payload.ui.language;
@@ -802,7 +819,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       }
       settingsLoaded = true;
     } catch (err) {
-      console.error("Failed to load settings:", err);
+      // warn, not error: the page shows the message itself, and console.error
+      // would also pop the Next.js dev overlay over it.
+      console.warn("Failed to load settings:", err);
       const message = err instanceof Error ? err.message : String(err);
       setSettingsError(message);
       // Resolve the loading gate so the page can render the error UI instead
@@ -815,7 +834,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setStatus((await statusResponse.json()) as SystemStatus);
       }
     } catch (err) {
-      console.error("Failed to load system status:", err);
+      console.warn("Failed to load system status:", err);
       // Only surface this when settings itself loaded; otherwise the
       // settings-fetch error already explains the disconnect.
       if (settingsLoaded) {

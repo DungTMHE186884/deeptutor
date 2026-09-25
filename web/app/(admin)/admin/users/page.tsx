@@ -6,16 +6,24 @@ import { useTranslation } from "react-i18next";
 import { fetchAuthStatus } from "@/lib/auth";
 import {
   listUsers,
-  deleteUser,
+  setUserDisabled,
   setUserRole,
+  verifyUserEmail,
   createUser,
+  getAdminStats,
+  listAdminPlans,
+  listUserSubscriptions,
+  updateUserSubscriptionPlan,
+  cancelUserSubscription,
   type UserRecord,
   type AccountPreset,
+  type AdminStats,
+  type AdminSubscriptionPlan,
+  type AdminUserSubscription,
 } from "@/lib/admin-api";
+import AdminTabs from "@/components/admin/AdminTabs";
 import { GrantEditor } from "@/features/multi-user/components/GrantEditor";
 import { BookPermissionEditor } from "@/features/multi-user/components/BookPermissionEditor";
-import { LearnerProfileEditor } from "@/features/multi-user/components/LearnerProfileEditor";
-import { GuardianRelationshipsEditor } from "@/features/multi-user/components/GuardianRelationshipsEditor";
 import { UserAvatar } from "@/components/UserAvatar";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { filterUsersByQuery } from "@/lib/admin-users";
@@ -24,15 +32,17 @@ import {
   Shield,
   ShieldCheck,
   ShieldOff,
-  Trash2,
+  Lock,
+  LockOpen,
   RefreshCw,
-  ArrowLeft,
   SlidersHorizontal,
   UserPlus,
   Users,
   X,
+  CreditCard,
+  HardDrive,
+  Cpu,
 } from "lucide-react";
-import Link from "next/link";
 import { formatDate as formatLocaleDate, type Language } from "@/lib/datetime";
 
 // Delegates to the shared locale mapping so a new UI language only has to be
@@ -60,7 +70,7 @@ export default function AdminUsersPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [query, setQuery] = useState("");
   const [confirmTarget, setConfirmTarget] = useState<{
-    kind: "delete" | "promote" | "demote";
+    kind: "lock" | "unlock" | "promote" | "demote";
     user: UserRecord;
   } | null>(null);
   const [confirmBusy, setConfirmBusy] = useState(false);
@@ -70,18 +80,64 @@ export default function AdminUsersPage() {
   const [createSubmitting, setCreateSubmitting] = useState(false);
   const [createError, setCreateError] = useState("");
 
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [plans, setPlans] = useState<AdminSubscriptionPlan[]>([]);
+  const [subs, setSubs] = useState<Record<string, AdminUserSubscription>>({});
+  const [planTarget, setPlanTarget] = useState<{
+    user: UserRecord;
+    planId: string;
+    durationDays: string;
+  } | null>(null);
+  const [planBusy, setPlanBusy] = useState(false);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const data = await listUsers();
+      const [data, statsData, planList, subList] = await Promise.all([
+        listUsers(),
+        getAdminStats().catch(() => null),
+        listAdminPlans().catch(() => [] as AdminSubscriptionPlan[]),
+        listUserSubscriptions().catch(() => [] as AdminUserSubscription[]),
+      ]);
       setUsers(data);
+      setStats(statsData);
+      setPlans(planList);
+      setSubs(Object.fromEntries(subList.map((s) => [s.id, s])));
     } catch (e) {
       setError(e instanceof Error ? e.message : t("Failed to load users"));
     } finally {
       setLoading(false);
     }
   }, [t]);
+
+  async function handleAssignPlan() {
+    if (!planTarget || planBusy) return;
+    setPlanBusy(true);
+    setActionError("");
+    try {
+      const target = plans.find((p) => p.id === planTarget.planId);
+      const isFreePlan = !target || (target.price_monthly <= 0 && target.price_yearly <= 0);
+      const days = Math.max(0, Number(planTarget.durationDays) || 0);
+      await updateUserSubscriptionPlan(planTarget.user.id, planTarget.planId, isFreePlan ? 0 : days);
+      setPlanTarget(null);
+      await load();
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : "Failed to update plan");
+    } finally {
+      setPlanBusy(false);
+    }
+  }
+
+  async function handleCancelPaid(user: UserRecord) {
+    setActionError("");
+    try {
+      await cancelUserSubscription(user.id);
+      await load();
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : "Failed to cancel subscription");
+    }
+  }
 
   useEffect(() => {
     fetchAuthStatus().then((status) => {
@@ -144,9 +200,12 @@ export default function AdminUsersPage() {
     setConfirmBusy(true);
     setActionError("");
     try {
-      if (kind === "delete") {
-        await deleteUser(user.username);
-        setUsers((prev) => prev.filter((u) => u.username !== user.username));
+      if (kind === "lock" || kind === "unlock") {
+        const disabled = kind === "lock";
+        await setUserDisabled(user.username, disabled);
+        setUsers((prev) =>
+          prev.map((u) => (u.username === user.username ? { ...u, disabled } : u)),
+        );
       } else {
         const newRole = kind === "promote" ? "admin" : "user";
         await setUserRole(user.username, newRole);
@@ -167,8 +226,8 @@ export default function AdminUsersPage() {
       setActionError(
         e instanceof Error
           ? e.message
-          : confirmTarget.kind === "delete"
-            ? t("Failed to delete user")
+          : confirmTarget.kind === "lock" || confirmTarget.kind === "unlock"
+            ? t("Failed to update account status")
             : t("Failed to update role"),
       );
     } finally {
@@ -189,16 +248,11 @@ export default function AdminUsersPage() {
 
   return (
     <div className="h-screen overflow-y-auto bg-[var(--background)] px-4 py-10 [scrollbar-gutter:stable]">
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto max-w-5xl">
         {/* Header */}
         <div className="mb-8">
-          <Link
-            href="/"
-            className="mb-4 inline-flex items-center gap-1.5 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
-          >
-            <ArrowLeft size={16} />
-            {t("Back")}
-          </Link>
+          <AdminTabs pendingPayments={stats?.pending_payments} />
+
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="font-serif text-xl font-semibold text-[var(--foreground)]">
@@ -237,8 +291,49 @@ export default function AdminUsersPage() {
         </div>
 
         {actionError && (
-          <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-400">
+          <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {actionError}
+          </div>
+        )}
+
+        {stats && (
+          <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-4 rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
+              <div className="flex items-center justify-between text-xs text-[var(--muted-foreground)] mb-1">
+                <span>{t("Total users")}</span>
+                <Users size={16} className="text-primary" />
+              </div>
+              <div className="text-2xl font-bold text-[var(--foreground)]">
+                {stats.total_users.toLocaleString()}
+              </div>
+            </div>
+            <div className="p-4 rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
+              <div className="flex items-center justify-between text-xs text-[var(--muted-foreground)] mb-1">
+                <span>{t("Paid users")}</span>
+                <CreditCard size={16} className="text-success" />
+              </div>
+              <div className="text-2xl font-bold text-[var(--foreground)]">
+                {stats.active_subscriptions.toLocaleString()}
+              </div>
+            </div>
+            <div className="p-4 rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
+              <div className="flex items-center justify-between text-xs text-[var(--muted-foreground)] mb-1">
+                <span>{t("API cost this month")}</span>
+                <Cpu size={16} className="text-muted-foreground" />
+              </div>
+              <div className="text-2xl font-bold text-[var(--foreground)] font-mono">
+                ${(stats.api_cost_month_usd ?? 0).toFixed(2)}
+              </div>
+            </div>
+            <div className="p-4 rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
+              <div className="flex items-center justify-between text-xs text-[var(--muted-foreground)] mb-1">
+                <span>{t("Revenue this month")}</span>
+                <HardDrive size={16} className="text-muted-foreground" />
+              </div>
+              <div className="text-2xl font-bold text-[var(--foreground)] font-mono">
+                ${(stats.revenue_this_month_usd ?? 0).toFixed(2)}
+              </div>
+            </div>
           </div>
         )}
 
@@ -256,7 +351,7 @@ export default function AdminUsersPage() {
                 placeholder={t("Search users…")}
                 aria-label={t("Search users")}
                 className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] py-2 pl-9 pr-3 text-sm
-                           text-[var(--foreground)] placeholder:text-[var(--muted-foreground)]/70
+                           text-[var(--foreground)] placeholder:text-muted-foreground/70
                            outline-none focus:border-[var(--ring)] transition-colors"
               />
             </div>
@@ -281,17 +376,17 @@ export default function AdminUsersPage() {
                   key={row}
                   className="flex animate-pulse items-center gap-3 px-5 py-4"
                 >
-                  <div className="h-8 w-8 rounded-full bg-[var(--muted)]/60" />
+                  <div className="h-8 w-8 rounded-full bg-muted/60" />
                   <div className="flex-1 space-y-2">
-                    <div className="h-3 w-36 rounded bg-[var(--muted)]/60" />
-                    <div className="h-2.5 w-24 rounded bg-[var(--muted)]/40" />
+                    <div className="h-3 w-36 rounded bg-muted/60" />
+                    <div className="h-2.5 w-24 rounded bg-muted/40" />
                   </div>
-                  <div className="h-5 w-16 rounded-full bg-[var(--muted)]/40" />
+                  <div className="h-5 w-16 rounded-full bg-muted/40" />
                 </div>
               ))}
             </div>
           ) : error ? (
-            <div className="flex items-center justify-center py-16 text-red-500 text-sm">
+            <div className="flex items-center justify-center py-16 text-destructive text-sm">
               {error}
             </div>
           ) : users.length === 0 ? (
@@ -299,7 +394,7 @@ export default function AdminUsersPage() {
               <Users
                 size={28}
                 strokeWidth={1.5}
-                className="text-[var(--muted-foreground)]/50"
+                className="text-muted-foreground/50"
               />
               <p className="mt-3 text-sm font-medium text-[var(--foreground)]">
                 {t("No users yet")}
@@ -311,7 +406,7 @@ export default function AdminUsersPage() {
                 onClick={openCreateDialog}
                 className="mt-4 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm
                            border border-[var(--border)] text-[var(--foreground)]
-                           hover:bg-[var(--background)]/60 transition-colors"
+                           hover:bg-background/60 transition-colors"
               >
                 <UserPlus size={14} />
                 {t("Add user")}
@@ -322,7 +417,7 @@ export default function AdminUsersPage() {
               <Search
                 size={28}
                 strokeWidth={1.5}
-                className="text-[var(--muted-foreground)]/50"
+                className="text-muted-foreground/50"
               />
               <p className="mt-3 text-sm font-medium text-[var(--foreground)]">
                 {t("No users match “{{query}}”", { query: query.trim() })}
@@ -331,7 +426,7 @@ export default function AdminUsersPage() {
                 onClick={() => setQuery("")}
                 className="mt-4 rounded-lg px-3 py-1.5 text-sm border border-[var(--border)]
                            text-[var(--muted-foreground)] hover:text-[var(--foreground)]
-                           hover:bg-[var(--background)]/60 transition-colors"
+                           hover:bg-background/60 transition-colors"
               >
                 {t("Clear search")}
               </button>
@@ -342,6 +437,7 @@ export default function AdminUsersPage() {
                 <tr className="border-b border-[var(--border)] text-left text-xs text-[var(--muted-foreground)] uppercase tracking-wider">
                   <th className="px-5 py-3 font-medium">{t("Username")}</th>
                   <th className="px-5 py-3 font-medium">{t("Role")}</th>
+                  <th className="px-5 py-3 font-medium">{t("Plan", { context: "billing" })}</th>
                   <th className="px-5 py-3 font-medium">{t("Joined")}</th>
                   <th className="px-5 py-3 font-medium text-right">
                     {t("Actions")}
@@ -353,9 +449,10 @@ export default function AdminUsersPage() {
                   const isSelf = user.username === currentUser;
                   const isAdmin = user.role === "admin";
                   const canManageAssignments = !isAdmin && Boolean(user.id);
+                  const userSub = subs[user.id];
                   return (
                     <Fragment key={user.username}>
-                      <tr className="group hover:bg-[var(--background)]/50 transition-colors">
+                      <tr className="group hover:bg-background/50 transition-colors">
                         <td className="px-5 py-3">
                           <div className="flex items-center gap-3">
                             <UserAvatar
@@ -365,14 +462,58 @@ export default function AdminUsersPage() {
                               role={user.role}
                               size={32}
                             />
-                            <span className="min-w-0 truncate font-medium text-[var(--foreground)]">
-                              {user.username}
-                              {isSelf && (
-                                <span className="ml-2 text-xs font-normal text-[var(--muted-foreground)]">
-                                  {t("(you)")}
+                            <div className="min-w-0">
+                              <span className="block truncate font-medium text-[var(--foreground)]">
+                                {user.full_name || user.username}
+                                {isSelf && (
+                                  <span className="ml-2 text-xs font-normal text-[var(--muted-foreground)]">
+                                    {t("(you)")}
+                                  </span>
+                                )}
+                                {user.disabled && (
+                                  <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                                    <Lock size={10} />
+                                    {t("Locked")}
+                                  </span>
+                                )}
+                              </span>
+                              {(user.full_name || user.email) && (
+                                <span className="flex flex-wrap items-center gap-1.5 text-xs text-[var(--muted-foreground)]">
+                                  {user.full_name && <span>@{user.username}</span>}
+                                  {user.email && user.email !== user.username && (
+                                    <span className="truncate">{user.email}</span>
+                                  )}
+                                  {user.email &&
+                                    (user.email_verified ? (
+                                      <span className="text-emerald-600 dark:text-emerald-400">
+                                        {t("Verified")}
+                                      </span>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        title={t("Mark email as verified")}
+                                        onClick={async () => {
+                                          try {
+                                            await verifyUserEmail(user.username);
+                                            setUsers((prev) =>
+                                              prev.map((u) =>
+                                                u.username === user.username
+                                                  ? { ...u, email_verified: true }
+                                                  : u,
+                                              ),
+                                            );
+                                          } catch {
+                                            /* surfaced by the row staying unverified */
+                                          }
+                                        }}
+                                        className="text-amber-600 hover:underline dark:text-amber-400"
+                                      >
+                                        {t("Not verified")} · {t("Mark verified")}
+                                      </button>
+                                    ))}
                                 </span>
                               )}
-                            </span>
+                            </div>
                           </div>
                         </td>
                         <td className="px-5 py-3">
@@ -380,8 +521,8 @@ export default function AdminUsersPage() {
                             className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium
                             ${
                               isAdmin
-                                ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-                                : "bg-[var(--muted)]/50 text-[var(--muted-foreground)]"
+                                ? "bg-warning-surface text-warning"
+                                : "bg-muted/50 text-[var(--muted-foreground)]"
                             }`}
                           >
                             {isAdmin && (
@@ -401,6 +542,51 @@ export default function AdminUsersPage() {
                                 ),
                               })}
                             </span>
+                          )}
+                        </td>
+                        <td className="px-5 py-3">
+                          {isAdmin ? (
+                            <span className="text-xs text-[var(--muted-foreground)]">{t("Unlimited")}</span>
+                          ) : (
+                            <div className="space-y-1">
+                              <button
+                                onClick={() =>
+                                  setPlanTarget({
+                                    user,
+                                    planId: userSub?.plan_id ?? "free",
+                                    durationDays: "30",
+                                  })
+                                }
+                                title={t("Change / assign plan")}
+                                className="rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1 text-xs font-semibold text-[var(--foreground)] hover:border-primary"
+                              >
+                                {userSub?.plan ?? "Free Starter"}
+                              </button>
+                              {userSub?.subscription?.current_period_end && (
+                                <div className="text-[10px] text-[var(--muted-foreground)]">
+                                  {t(userSub.subscription.cancel_at_period_end ? "Ends {{date}}" : "Expires {{date}}", {
+                                    date: formatDate(userSub.subscription.current_period_end, lang),
+                                  })}
+                                </div>
+                              )}
+                              {userSub && (
+                                <div className="text-[10px] text-[var(--muted-foreground)]">
+                                  {t("{{used}}/{{limit}} credits today · API ${{cost}}/month", {
+                                    used: userSub.tokens_today.toLocaleString(),
+                                    limit: userSub.limit_day.toLocaleString(),
+                                    cost: (userSub.cost_month_usd ?? 0).toFixed(2),
+                                  })}
+                                </div>
+                              )}
+                              {userSub && userSub.plan_id !== "free" && (
+                                <button
+                                  onClick={() => void handleCancelPaid(user)}
+                                  className="text-[10px] text-destructive hover:underline"
+                                >
+                                  {t("Cancel plan now")}
+                                </button>
+                              )}
+                            </div>
                           )}
                         </td>
                         <td className="px-5 py-3.5 text-[var(--muted-foreground)]">
@@ -450,46 +636,39 @@ export default function AdminUsersPage() {
                             </button>
                             <button
                               onClick={() =>
-                                setConfirmTarget({ kind: "delete", user })
+                                setConfirmTarget({
+                                  kind: user.disabled ? "unlock" : "lock",
+                                  user,
+                                })
                               }
                               disabled={isSelf}
                               title={
                                 isSelf
-                                  ? t("Cannot delete your own account")
-                                  : t("Delete {{username}}", {
-                                      username: user.username,
-                                    })
+                                  ? t("You cannot lock your own account.")
+                                  : user.disabled
+                                    ? t("Unlock {{username}}", { username: user.username })
+                                    : t("Lock {{username}}", { username: user.username })
                               }
-                              className="rounded-lg p-1.5 text-[var(--muted-foreground)]
-                                       hover:bg-red-500/10 hover:text-red-500
-                                       disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                              className={`rounded-lg p-1.5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors ${
+                                user.disabled
+                                  ? "text-amber-600 hover:bg-[var(--background)] dark:text-amber-400"
+                                  : "text-[var(--muted-foreground)] hover:bg-destructive/10 hover:text-destructive"
+                              }`}
                             >
-                              <Trash2 size={15} />
+                              {user.disabled ? <LockOpen size={15} /> : <Lock size={15} />}
                             </button>
                           </div>
                         </td>
                       </tr>
                       {canManageAssignments && expandedUserId === user.id && (
                         <tr>
-                          <td colSpan={4} className="p-0">
+                          <td colSpan={5} className="p-0">
                             <GrantEditor
                               key={user.id}
                               userId={user.id}
                               lockLearningPolicy={user.preset === "learner"}
                             />
                             <BookPermissionEditor userId={user.id} />
-                            {user.preset === "learner" && (
-                              <>
-                                <GuardianRelationshipsEditor
-                                  learnerId={user.id}
-                                  learnerUsername={user.username}
-                                  users={users}
-                                />
-                                <LearnerProfileEditor
-                                  username={user.username}
-                                />
-                              </>
-                            )}
                           </td>
                         </tr>
                       )}
@@ -502,30 +681,34 @@ export default function AdminUsersPage() {
         </div>
 
         <p className="mt-8 text-center text-xs text-[var(--muted-foreground)]">
-          {t("DeepTutor Admin · User Management")}
+          {t("PathMind Admin · User Management")}
         </p>
       </div>
 
       <ConfirmDialog
         open={confirmTarget !== null}
         title={
-          confirmTarget?.kind === "delete"
-            ? t("Delete user")
-            : confirmTarget?.kind === "promote"
-              ? t("Promote to admin")
-              : t("Demote to user")
+          confirmTarget?.kind === "lock"
+            ? t("Lock account")
+            : confirmTarget?.kind === "unlock"
+              ? t("Unlock account")
+              : confirmTarget?.kind === "promote"
+                ? t("Promote to admin")
+                : t("Demote to user")
         }
-        tone={confirmTarget?.kind === "delete" ? "danger" : "default"}
+        tone={confirmTarget?.kind === "lock" ? "danger" : "default"}
         confirmLabel={
-          confirmTarget?.kind === "delete"
-            ? t("Delete user")
-            : confirmTarget?.kind === "promote"
-              ? t("Promote")
-              : t("Demote")
+          confirmTarget?.kind === "lock"
+            ? t("Lock")
+            : confirmTarget?.kind === "unlock"
+              ? t("Unlock")
+              : confirmTarget?.kind === "promote"
+                ? t("Promote")
+                : t("Demote")
         }
         busyLabel={
-          confirmTarget?.kind === "delete"
-            ? t("Deleting…")
+          confirmTarget?.kind === "lock" || confirmTarget?.kind === "unlock"
+            ? t("Saving…")
             : confirmTarget?.kind === "promote"
               ? t("Promoting…")
               : t("Demoting…")
@@ -536,7 +719,7 @@ export default function AdminUsersPage() {
       >
         {confirmTarget && (
           <>
-            <div className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--background)]/50 px-3 py-2.5">
+            <div className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-background/50 px-3 py-2.5">
               <UserAvatar
                 username={confirmTarget.user.username}
                 userId={confirmTarget.user.id}
@@ -560,11 +743,13 @@ export default function AdminUsersPage() {
               </div>
             </div>
             <p className="mt-3">
-              {confirmTarget.kind === "delete"
+              {confirmTarget.kind === "lock"
                 ? t(
-                    "This permanently removes the account and its assignments. This cannot be undone.",
+                    "The user is signed out everywhere and cannot sign in until unlocked. Their data is kept.",
                   )
-                : confirmTarget.kind === "promote"
+                : confirmTarget.kind === "unlock"
+                  ? t("The user can sign in again.")
+                  : confirmTarget.kind === "promote"
                   ? t(
                       "Admins can manage users and assignments, and work in the shared main workspace.",
                     )
@@ -573,6 +758,52 @@ export default function AdminUsersPage() {
                     )}
             </p>
           </>
+        )}
+      </ConfirmDialog>
+
+      <ConfirmDialog
+        open={planTarget !== null}
+        title={t("Assign / change plan")}
+        confirmLabel={t("Apply")}
+        busy={planBusy}
+        onConfirm={() => void handleAssignPlan()}
+        onCancel={() => setPlanTarget(null)}
+      >
+        {planTarget && (
+          <div className="space-y-3 text-[var(--foreground)]">
+            <p className="text-[var(--muted-foreground)]">
+              {t("User")}: <b className="text-[var(--foreground)]">{planTarget.user.username}</b>.{" "}
+              {t("Assigning a plan manually does not create a payment transaction.")}
+            </p>
+            <label className="block text-xs">
+              <span className="mb-1 block text-[var(--muted-foreground)]">{t("Plan", { context: "billing" })}</span>
+              <select
+                value={planTarget.planId}
+                onChange={(e) => setPlanTarget({ ...planTarget, planId: e.target.value })}
+                className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-sm"
+              >
+                {plans.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                    {p.is_active ? "" : ` (${t("Not on sale")})`}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block text-xs">
+              <span className="mb-1 block text-[var(--muted-foreground)]">
+                {t("Duration (days) — 0 = no expiry; time is added on top of the same active plan")}
+              </span>
+              <input
+                type="number"
+                min={0}
+                max={3650}
+                value={planTarget.durationDays}
+                onChange={(e) => setPlanTarget({ ...planTarget, durationDays: e.target.value })}
+                className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-sm"
+              />
+            </label>
+          </div>
         )}
       </ConfirmDialog>
 
@@ -633,7 +864,7 @@ export default function AdminUsersPage() {
                 {t("Account preset")}
               </legend>
               <div
-                className="grid grid-cols-3 gap-1 rounded-lg bg-[var(--muted)]/50 p-1"
+                className="grid grid-cols-3 gap-1 rounded-lg bg-muted/50 p-1"
                 role="group"
                 aria-label={t("Account preset")}
               >
@@ -676,7 +907,7 @@ export default function AdminUsersPage() {
             </fieldset>
 
             {createError && (
-              <p className="mb-3 text-xs text-red-500">{createError}</p>
+              <p className="mb-3 text-xs text-destructive">{createError}</p>
             )}
 
             <div className="flex items-center justify-end gap-2">

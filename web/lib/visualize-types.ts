@@ -174,7 +174,7 @@ export function extractVisualizeResult(
 
   return {
     schema_version: String(
-      resultMetadata.schema_version ?? "deeptutor.visualization/legacy",
+      resultMetadata.schema_version ?? "pathmind.visualization/legacy",
     ),
     response: String(resultMetadata.response ?? ""),
     render_type: renderType,

@@ -10,6 +10,8 @@ export interface AuthStatusState {
   authenticated: boolean;
   /** Whether the authenticated user is an admin. */
   isAdmin: boolean;
+  /** Username of authenticated account */
+  username: string | null;
   /** Stable account id for account-scoped browser state. */
   userId: string | null;
   /** False when the runtime status endpoint could not be reached. */
@@ -22,6 +24,7 @@ const INITIAL: AuthStatusState = {
   enabled: false,
   authenticated: false,
   isAdmin: false,
+  username: null,
   userId: null,
   statusAvailable: false,
   loading: true,
@@ -35,13 +38,14 @@ const INITIAL: AuthStatusState = {
  * baked into the build. Components that need to know whether auth is on — to
  * show the Sign-out / Admin affordances — use this hook instead of a build-time
  * constant, so it works identically on Docker (read-only rootfs), the PyPI
- * `deeptutor start` launcher, and source dev.
+ * `pathmind start` launcher, and source dev.
  */
 function loadAuthStatus(): Promise<AuthStatusState> {
   return fetchAuthStatus().then((status) => ({
     enabled: Boolean(status?.enabled),
     authenticated: Boolean(status?.authenticated),
     isAdmin: status?.role === "admin",
+    username: status?.username ?? null,
     userId:
       typeof status?.user_id === "string" && status.user_id.trim()
         ? status.user_id

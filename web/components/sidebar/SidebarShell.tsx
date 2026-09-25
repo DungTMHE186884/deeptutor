@@ -4,7 +4,7 @@ import { navigateTask } from "@/lib/workspace-scope";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
@@ -20,7 +20,6 @@ import { useChatWorkspaces } from "@/hooks/useChatWorkspaces";
 import SessionList from "@/components/SessionList";
 import { useSidebarDrawer } from "@/components/layout/AppShell";
 import { useDevice } from "@/hooks/useDevice";
-import { VersionBadge } from "@/components/sidebar/VersionBadge";
 import type {
   SessionOrganizationPatch,
   SessionSummary,
@@ -30,7 +29,6 @@ import type { ReadingCollectionLabel } from "@/lib/reading-workspace-api";
 import type { StudyCourse } from "@/lib/courses-api";
 import { useSidebarResize } from "@/hooks/useSidebarResize";
 import { SidebarHome, SidebarNav } from "@/components/sidebar/SidebarNav";
-import { SECONDARY_NAV, isNavActive } from "@/components/sidebar/nav-entries";
 import {
   mergeManualOrder,
   readSessionOrder,
@@ -85,6 +83,8 @@ interface SidebarShellProps {
    * switch to their icon-only variant when the rail is collapsed.
    */
   footerSlot?: ReactNode | ((collapsed: boolean) => ReactNode);
+  /** Rendered after Settings (e.g. Admin / Sign out), same contract as footerSlot. */
+  footerEndSlot?: ReactNode | ((collapsed: boolean) => ReactNode);
 }
 
 export function SidebarShell({
@@ -102,8 +102,8 @@ export function SidebarShell({
   readingCollections = [],
   onOrganizeSession,
   footerSlot,
+  footerEndSlot,
 }: SidebarShellProps) {
-  const pathname = usePathname();
   const router = useRouter();
   const { t } = useTranslation();
   const { sidebarCollapsed, setSidebarCollapsed: setCollapsed } = useAppShell();
@@ -129,6 +129,10 @@ export function SidebarShell({
 
   const renderedFooter =
     typeof footerSlot === "function" ? footerSlot(collapsed) : footerSlot;
+  const renderedFooterEnd =
+    typeof footerEndSlot === "function"
+      ? footerEndSlot(collapsed)
+      : footerEndSlot;
   // The order the learner dragged the history region into — conversation ids
   // and group ids in one list, since the two are peers there. Like the
   // collapse preference above it is per-machine view state, hydrated after
@@ -188,15 +192,15 @@ export function SidebarShell({
         <div className="relative mb-2 flex h-9 w-9 items-center justify-center">
           <Link
             href="/"
-            aria-label="DeepTutor"
+            aria-label="PathMind"
             className="flex items-center justify-center transition-opacity duration-150 group-hover/sb:opacity-0"
           >
             <Image
               src="/logo.png"
-              alt="DeepTutor"
+              alt="PathMind"
               width={22}
               height={22}
-              className="h-[22px] w-[22px] rounded-md"
+              className="h-[22px] w-[22px] rounded-md dark:brightness-[1.8]"
             />
           </Link>
           <button
@@ -217,28 +221,11 @@ export function SidebarShell({
           />
         </div>
 
-        {/* Secondary nav + footer */}
+        {/* Footer: the account card; Settings / Admin / Sign out live in its menu */}
         <div className="flex w-full shrink-0 flex-col items-center gap-1 px-1.5">
           <div className="my-1 h-px w-7 bg-border/40" />
-          {SECONDARY_NAV.map((item) => {
-            const active = isNavActive(pathname, item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                title={t(item.label) as string}
-                className={`relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-150 ${
-                  active
-                    ? "bg-[var(--accent)] text-[var(--foreground)] shadow-sm"
-                    : "text-foreground/85 hover:bg-background/60 hover:text-[var(--foreground)]"
-                }`}
-              >
-                <item.icon size={18} strokeWidth={active ? 2 : 1.6} />
-              </Link>
-            );
-          })}
           {renderedFooter}
-          <VersionBadge onNavigate={closeDrawerOnNav} />
+          {renderedFooterEnd}
         </div>
       </aside>
     );
@@ -255,18 +242,18 @@ export function SidebarShell({
         <Link href="/" className="group flex items-center gap-1.5">
           <Image
             src="/logo.png"
-            alt="DeepTutor"
+            alt="PathMind"
             width={22}
             height={22}
-            className="h-[22px] w-[22px] transition-transform duration-200 group-hover:scale-105"
+            className="h-[22px] w-[22px] transition-transform duration-200 group-hover:scale-105 dark:brightness-[1.8]"
           />
           <Image
             src="/banner.png"
-            alt="DeepTutor"
-            width={897}
-            height={236}
+            alt="PathMind"
+            width={1218}
+            height={240}
             priority
-            className="h-[22px] w-auto transition-transform duration-200 group-hover:scale-105"
+            className="h-[22px] w-auto transition-transform duration-200 group-hover:scale-105 dark:brightness-[1.8]"
           />
         </Link>
         {/* The rail is a desktop affordance; in the drawer the scrim and the
@@ -354,30 +341,10 @@ export function SidebarShell({
         ) : null}
       </div>
 
-      {/* Secondary nav + footer */}
+      {/* Footer: the account card; Settings / Admin / Sign out live in its menu */}
       <div className="shrink-0 border-t border-border/40 px-2 py-2">
         {renderedFooter}
-        <div className="flex items-center gap-1">
-          {SECONDARY_NAV.map((item) => {
-            const active = isNavActive(pathname, item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={closeDrawerOnNav}
-                className={`flex min-h-8 min-w-0 flex-1 items-center gap-2 rounded-md px-2.5 py-1.5 text-[13px] transition-colors ${
-                  active
-                    ? "bg-[var(--accent)] font-medium text-[var(--foreground)]"
-                    : "text-foreground/85 hover:bg-background/60 hover:text-[var(--foreground)]"
-                }`}
-              >
-                <item.icon size={15} strokeWidth={active ? 1.9 : 1.6} />
-                <span>{t(item.label)}</span>
-              </Link>
-            );
-          })}
-          <VersionBadge onNavigate={closeDrawerOnNav} />
-        </div>
+        {renderedFooterEnd}
       </div>
       {!isMobile && (
         <div

@@ -1,4 +1,4 @@
-export const STORAGE_NAMESPACE = "deeptutor:v2:";
+export const STORAGE_NAMESPACE = "pathmind:v2:";
 
 export type StorageScope = "local" | "session";
 

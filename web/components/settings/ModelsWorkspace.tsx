@@ -43,6 +43,7 @@ import {
   WorkspaceSplit,
   workspaceCardClass,
 } from "./WorkspaceShell";
+import { confirmAction } from "@/lib/confirm";
 
 type ModelPage = "llm" | "embedding" | "search" | "voice" | "multimodal";
 const PAGE_SERVICES: Record<ModelPage, ServiceName[]> = {
@@ -584,6 +585,7 @@ function ModelEditor({
       ? listed.models
       : provider?.source.discovery?.models || [];
   const remove = async () => {
+    if (!(await confirmAction(t("Delete this model?"), { tone: "danger" }))) return;
     await stageRegistry({ kind: "model", service, profile_id: profile.id, model_id: model?.id, delete: true });
     onRemoved();
   };

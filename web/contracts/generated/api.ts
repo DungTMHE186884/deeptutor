@@ -1312,7 +1312,7 @@ export interface paths {
      *
      *     No language parameter: the output language is the learner's own
      *     model-output setting, resolved server-side. See
-     *     :mod:`deeptutor.services.suggestions`.
+     *     :mod:`pathmind.services.suggestions`.
      */
     readonly get: operations["get_starter_suggestions_api_dashboard_suggestions_get"];
     readonly put?: never;
@@ -2934,7 +2934,7 @@ export interface paths {
     readonly put?: never;
     /**
      * Pair Device
-     * @description Pair a new MN4 device. Requires a DeepTutor session.
+     * @description Pair a new MN4 device. Requires a PathMind session.
      *
      *     Returns a one-time token the Add-on stores and presents on every sync.
      */
@@ -3937,7 +3937,7 @@ export interface paths {
      *     The skill lands in the admin workspace — the same pool ``/admin/resources``
      *     lists — so it stays invisible to non-admin users until a grant assigns it.
      *     The install pipeline (verdict gate, safe extraction, ``always`` stripping)
-     *     lives in :func:`deeptutor.services.skill.hub.install_from_hub`; this
+     *     lives in :func:`pathmind.services.skill.hub.install_from_hub`; this
      *     endpoint only chooses the target root and audits the action.
      */
     readonly post: operations["admin_install_skill_api_multi_user_admin_skills_install_post"];
@@ -6075,7 +6075,7 @@ export interface paths {
      * @description Download the material with its annotations applied.
      *
      *     ``pdf`` writes real PDF annotations into a copy of the original, so the
-     *     export keeps working outside DeepTutor; ``markdown`` returns the marks as
+     *     export keeps working outside PathMind; ``markdown`` returns the marks as
      *     text, which is what every non-PDF format gets.
      */
     readonly get: operations["export_api_reading_materials__material_id__export_get"];
@@ -8336,7 +8336,7 @@ export interface paths {
      * Hub Catalog
      * @description Proxy a skill hub's public catalog for the in-app browser.
      *
-     *     The web "Import from EduHub" panel renders these rows in DeepTutor's own
+     *     The web "Import from EduHub" panel renders these rows in PathMind's own
      *     UI — no embedded iframe, no login — so users can browse, search, and
      *     one-click download skills. Returns ``web_url`` (the hub's site origin) so
      *     the panel can offer a "view on EduHub" link out.
@@ -8386,7 +8386,7 @@ export interface paths {
      *     Lands the package in the same per-user dir that ``/create`` writes to, so
      *     the imported skill shows up in this user's Skills list. The install gate
      *     (``suspicious`` verdict abort, safe extraction, ``always`` stripping)
-     *     lives in :func:`deeptutor.services.skill.hub.install_from_hub`.
+     *     lives in :func:`pathmind.services.skill.hub.install_from_hub`.
      */
     readonly post: operations["install_skill_api_skills_install_post"];
     readonly delete?: never;
@@ -8824,7 +8824,7 @@ export interface paths {
      * @description Send a message straight to a connected subagent and stream its run.
      *
      *     This is the sidebar's "talk to the agent directly" path: it resumes the same
-     *     live session DeepTutor consults (shared via the cross-turn registry, keyed by
+     *     live session PathMind consults (shared via the cross-turn registry, keyed by
      *     chat session + connection), so the agent keeps full context. Streams the
      *     native run as newline-delimited JSON, in the same channel shape the chat WS
      *     uses, so the sidebar transcript renders it identically.
@@ -8889,7 +8889,7 @@ export interface paths {
     };
     /**
      * Get Memory Usage
-     * @description Resident memory of the running DeepTutor process tree.
+     * @description Resident memory of the running PathMind process tree.
      *
      *     Deliberately separate from ``/status``: that snapshot resolves the LLM,
      *     embedding and search configs and is fetched once per settings mount, while
@@ -11133,14 +11133,14 @@ export interface components {
       readonly topic: string;
     };
     /** ProgressRequest */
-    readonly deeptutor__api__routers__book__ProgressRequest: {
+    readonly pathmind__api__routers__book__ProgressRequest: {
       /** Book Id */
       readonly book_id: string;
       /** Page Id */
       readonly page_id: string;
     };
     /** ProgressRequest */
-    readonly deeptutor__api__routers__video_learning__ProgressRequest: {
+    readonly pathmind__api__routers__video_learning__ProgressRequest: {
       /**
        * Duration Seconds
        * @default 0
@@ -14036,7 +14036,7 @@ export interface components {
      * TopicSourceKind
      * @description What a learner may point a mastery goal at.
      *
-     *     Everything DeepTutor already holds for them is fair game: their library
+     *     Everything PathMind already holds for them is fair game: their library
      *     (``BOOK``), their notes (``NOTEBOOK``), an indexed corpus or one document
      *     inside it (``KNOWLEDGE_BASE`` / ``FILE``), and — added with the mastery
      *     goal rework — the working history that shows what they have actually been
@@ -15170,10 +15170,10 @@ export type SchemaDataMigrationPayload =
   components["schemas"]["DataMigrationPayload"];
 export type SchemaDedupRequest = components["schemas"]["DedupRequest"];
 export type SchemaDeepDiveRequest = components["schemas"]["DeepDiveRequest"];
-export type SchemaDeeptutorApiRoutersBookProgressRequest =
-  components["schemas"]["deeptutor__api__routers__book__ProgressRequest"];
-export type SchemaDeeptutorApiRoutersVideoLearningProgressRequest =
-  components["schemas"]["deeptutor__api__routers__video_learning__ProgressRequest"];
+export type SchemaPathmindApiRoutersBookProgressRequest =
+  components["schemas"]["pathmind__api__routers__book__ProgressRequest"];
+export type SchemaPathmindApiRoutersVideoLearningProgressRequest =
+  components["schemas"]["pathmind__api__routers__video_learning__ProgressRequest"];
 export type SchemaDeleteBlockRequest =
   components["schemas"]["DeleteBlockRequest"];
 export type SchemaDeleteKnowledgeBaseRequest =
@@ -17436,7 +17436,7 @@ export interface operations {
     };
     readonly requestBody: {
       readonly content: {
-        readonly "application/json": components["schemas"]["deeptutor__api__routers__book__ProgressRequest"];
+        readonly "application/json": components["schemas"]["pathmind__api__routers__book__ProgressRequest"];
       };
     };
     readonly responses: {
@@ -17475,7 +17475,7 @@ export interface operations {
     };
     readonly requestBody: {
       readonly content: {
-        readonly "application/json": components["schemas"]["deeptutor__api__routers__book__ProgressRequest"];
+        readonly "application/json": components["schemas"]["pathmind__api__routers__book__ProgressRequest"];
       };
     };
     readonly responses: {
@@ -36321,7 +36321,7 @@ export interface operations {
     };
     readonly requestBody: {
       readonly content: {
-        readonly "application/json": components["schemas"]["deeptutor__api__routers__video_learning__ProgressRequest"];
+        readonly "application/json": components["schemas"]["pathmind__api__routers__video_learning__ProgressRequest"];
       };
     };
     readonly responses: {

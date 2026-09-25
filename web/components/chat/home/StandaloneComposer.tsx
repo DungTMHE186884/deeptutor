@@ -52,7 +52,6 @@ import {
 import { listLLMOptions, type LLMOption } from "@/lib/llm-options";
 import type { SelectedRecord } from "@/lib/notebook-selection-types";
 import type { SpaceMemoryFile } from "@/lib/space-items";
-import { getSubagentSettings } from "@/lib/subagents-api";
 import type { LLMSelection } from "@/features/chat/model/protocol";
 import {
   DEFAULT_QUIZ_CONFIG,
@@ -131,7 +130,7 @@ export interface StandaloneComposerSubmission {
   persona: string | null;
   llmSelection: LLMSelection | null;
   /**
-   * How many times DeepTutor may consult the selected agent this turn, or
+   * How many times PathMind may consult the selected agent this turn, or
    * null when no agent is selected. Travels on the submission rather than in
    * `knowledgeBases` because it is a per-turn budget, and the caller is the
    * one that owns the request config it belongs in.
@@ -318,31 +317,11 @@ function StandaloneComposerImpl({
 
   // Connected subagents arrive as `type: subagent` knowledge bases and travel
   // the same request path, but they are a different question — "who else
-  // should DeepTutor ask" rather than "what should it read" — so they get
+  // should PathMind ask" rather than "what should it read" — so they get
   // their own chip and never appear in the knowledge picker.
-  const agentNameSet = useMemo(
-    () =>
-      new Set(
-        knowledgeBases
-          .filter((kb) => kb.metadata?.type === "subagent" && kb.metadata?.agent_kind !== "partner")
-          .map((kb) => kb.name),
-      ),
-    [knowledgeBases],
-  );
-  const kbOptions = useMemo(
-    () => knowledgeBases.filter((kb) => kb.metadata?.type !== "subagent"),
-    [knowledgeBases],
-  );
-  const agentOptions = useMemo(
-    () =>
-      knowledgeBases
-        .filter((kb) => kb.metadata?.type === "subagent" && kb.metadata?.agent_kind !== "partner")
-        .map((kb) => ({
-          name: kb.name,
-          kind: kb.metadata?.agent_kind as string | undefined,
-        })),
-    [knowledgeBases],
-  );
+  const agentNameSet = useMemo(() => new Set<string>(), []);
+  const kbOptions = knowledgeBases;
+  const agentOptions = useMemo(() => [] as { name: string; kind?: string }[], []);
 
   useEffect(() => {
     let cancelled = false;
@@ -579,24 +558,10 @@ function StandaloneComposerImpl({
     if (id) { setSelectedPartnerGroup(null); handleSelectAgent(null); }
   }, [handleSelectAgent]);
 
-  // Seeded from the configured default; the chip's stepper overrides it for
-  // the next turn. Null until the setting loads, which is also what "no agent
-  // selected" looks like — neither case has a budget to send.
-  const [subagentBudget, setSubagentBudget] = useState<number | null>(null);
+  const subagentBudget = null;
+  const setSubagentBudget = useCallback(() => {}, []);
   const [selectedPartner, setSelectedPartner] = useState<string | null>(null);
   const [selectedPartnerGroup, setSelectedPartnerGroup] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    void getSubagentSettings()
-      .then((settings) => {
-        if (!cancelled) setSubagentBudget(settings.consult_budget);
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const handleClearPersona = useCallback(() => setSelectedPersona(null), []);
   const handleToggleMemoryFile = useCallback((file: SpaceMemoryFile) => {

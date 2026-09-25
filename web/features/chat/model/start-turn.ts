@@ -53,7 +53,6 @@ export interface StartTurnInput {
   supersededTurnId?: string | null;
   followupQuestionContext?: Record<string, unknown> | null;
   selectionTutorContext?: Record<string, unknown> | null;
-  subagentConsultBudget?: number | null;
   consultPartnerId?: string | null;
   partnerDiscussionGroupId?: string | null;
   autoRoute?: boolean | null;

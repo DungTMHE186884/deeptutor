@@ -5,13 +5,17 @@
  * Generic over `{ username }` (rather than importing UserRecord) so the
  * module stays alias-free and loadable by the node unit tests.
  */
-export function filterUsersByQuery<T extends { username: string }>(
+export function filterUsersByQuery<
+  T extends { username: string; full_name?: string; email?: string },
+>(
   users: T[],
   query: string,
 ): T[] {
   const normalized = query.trim().toLowerCase();
   if (!normalized) return users;
   return users.filter((user) =>
-    user.username.toLowerCase().includes(normalized),
+    [user.username, user.full_name ?? "", user.email ?? ""].some((value) =>
+      value.toLowerCase().includes(normalized),
+    ),
   );
 }

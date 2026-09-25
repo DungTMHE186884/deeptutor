@@ -30,6 +30,7 @@ import { browserStorage } from "@/shared/storage";
 import BlockRenderer from "./blocks/BlockRenderer";
 import type { QuizAttemptArgs } from "./blocks/QuizBlock";
 import PageOutlineNav from "./PageOutlineNav";
+import { notify } from "@/lib/notifications";
 
 const INSERTABLE_TYPES: BlockType[] = [
   "text",
@@ -44,7 +45,7 @@ const INSERTABLE_TYPES: BlockType[] = [
   "deep_dive",
   "user_note",
 ];
-const PENDING_CHAPTER_END_KEY = "deeptutor.book.pendingChapterEnd";
+const PENDING_CHAPTER_END_KEY = "pathmind.book.pendingChapterEnd";
 const PENDING_CHAPTER_END_TTL_MS = 30_000;
 
 interface PendingChapterEnd {
@@ -296,13 +297,13 @@ export default function PageReader({
     }
     const selection = window.getSelection();
     if (!selection || selection.isCollapsed) {
-      window.alert(t("Please select some text before saving."));
+      notify(t("Please select some text before saving."), { tone: "error" });
       return;
     }
 
     const sourceText = normalizeText(selection.toString());
     if (!sourceText) {
-      window.alert(t("Selected text is empty."));
+      notify(t("Selected text is empty."), { tone: "error" });
       return;
     }
 

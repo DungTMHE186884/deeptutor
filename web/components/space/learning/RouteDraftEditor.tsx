@@ -12,6 +12,7 @@ import {
   normalizeRouteModules,
   routeDraftIssues,
 } from "./route-draft";
+import { confirmAction } from "@/lib/confirm";
 
 let fallbackSequence = 0;
 
@@ -57,13 +58,15 @@ export function RouteDraftEditor({
     modules[index] = module;
     onChange({ ...draft, modules: normalizeRouteModules(modules) });
   };
-  const removeModule = (index: number) =>
+  const removeModule = async (index: number) => {
+    if (!(await confirmAction(t("Delete this module?"), { tone: "danger" }))) return;
     onChange({
       ...draft,
       modules: normalizeRouteModules(
         draft.modules.filter((_, moduleIndex) => moduleIndex !== index),
       ),
     });
+  };
   const addModule = () => {
     const index = draft.modules.length;
     const moduleId = draftId("region");
@@ -182,7 +185,7 @@ export function RouteDraftEditor({
                 />
                 <button
                   type="button"
-                  onClick={() => removeModule(moduleIndex)}
+                  onClick={() => void removeModule(moduleIndex)}
                   disabled={draft.modules.length === 1}
                   aria-label={t("Remove module “{{name}}”", {
                     name: module.name || moduleIndex + 1,
@@ -278,14 +281,15 @@ export function RouteDraftEditor({
                       />
                       <button
                         type="button"
-                        onClick={() =>
+                        onClick={async () => {
+                          if (!(await confirmAction(t("Delete this knowledge point?"), { tone: "danger" }))) return;
                           updateModule(moduleIndex, {
                             ...module,
                             knowledge_points: module.knowledge_points.filter(
                               (_, index) => index !== pointIndex,
                             ),
-                          })
-                        }
+                          });
+                        }}
                         disabled={module.knowledge_points.length === 1}
                         aria-label={t("Remove “{{name}}”", {
                           name: point.name || pointIndex + 1,

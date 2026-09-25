@@ -35,6 +35,7 @@ import {
   type SessionOrganizationPatch,
   type SessionSummary,
 } from "@/lib/session-api";
+import { confirmAction } from "@/lib/confirm";
 
 /**
  * The learning space's conversation history: search, filter, and the archive.
@@ -145,7 +146,7 @@ export default function ChatHistorySection({
 
   const handleDelete = useCallback(
     async (sessionId: string) => {
-      if (!window.confirm(t("Permanently delete this chat and its tutor threads? This cannot be undone."))) return;
+      if (!(await confirmAction(t("Permanently delete this chat and its tutor threads? This cannot be undone."), { tone: "danger" }))) return;
       await deleteSession(sessionId, sessionWorkspaceId(sessions.find(item => item.session_id === sessionId)));
       if (activeSessionId === sessionId) setActiveSessionId(null);
       setSessions((prev) =>

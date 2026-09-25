@@ -63,7 +63,6 @@ const ITEM_ORDER: SelectableSpaceKey[] = [
   "attach",
   "knowledge",
   "chat_history",
-  "my_agents",
   "books",
   "reading",
   "notebooks",

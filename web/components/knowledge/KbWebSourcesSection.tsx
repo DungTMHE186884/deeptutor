@@ -11,6 +11,7 @@ import {
   type WebSource,
 } from "@/features/knowledge/api/sources";
 import { formatKnowledgeTimestamp } from "@/lib/knowledge-helpers";
+import { confirmAction } from "@/lib/confirm";
 
 interface KbWebSourcesSectionProps {
   kbName: string;
@@ -71,6 +72,7 @@ export default function KbWebSourcesSection({
   };
 
   const handleRemove = async (id: string) => {
+    if (!(await confirmAction(t("Remove this web source?"), { tone: "danger" }))) return;
     setError(null);
     try {
       await removeWebSource(kbName, id);
@@ -175,7 +177,7 @@ export default function KbWebSourcesSection({
               type="url"
               value={urlInput}
               onChange={(e) => setUrlInput(e.target.value)}
-              placeholder={t("https://docs.deeptutor.info/")}
+              placeholder={t("https://example.com/docs/")}
               className="w-full rounded-md border border-[var(--border)] bg-[var(--card)] px-2.5 py-1.5 text-[12.5px] text-[var(--foreground)] outline-none focus:border-[var(--primary)]"
             />
           </label>

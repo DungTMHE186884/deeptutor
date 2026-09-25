@@ -41,6 +41,9 @@ export interface ProfileInfo {
   disabled?: boolean;
   /** Avatar marker: "", "icon:<name>:<color>", or "img:<version>". */
   avatar?: string;
+  full_name?: string;
+  email?: string;
+  email_verified?: boolean;
 }
 
 function extractDetail(data: unknown, fallback: string): string {

@@ -35,6 +35,8 @@ import {
   type RunEvent,
   type RunMode,
 } from "@/components/memory/useMemoryRun";
+import { confirmAction } from "@/lib/confirm";
+import { notify } from "@/lib/notifications";
 
 interface MemoryRunPanelProps {
   layer: "L2" | "L3";
@@ -223,13 +225,12 @@ export default function MemoryRunPanel({
 
   const handleReset = useCallback(async () => {
     if (isRunning) return;
-    const ok =
-      typeof window !== "undefined" &&
-      window.confirm(
-        t(
-          "Reset will delete the current memory file AND its seen-id state. The next Update will re-ingest every L1 entity from scratch. Continue?",
-        ),
-      );
+    const ok = await confirmAction(
+      t(
+        "Reset will delete the current memory file AND its seen-id state. The next Update will re-ingest every L1 entity from scratch. Continue?",
+      ),
+      { tone: "danger" },
+    );
     if (!ok) return;
     try {
       const res = await apiFetch(
@@ -247,13 +248,12 @@ export default function MemoryRunPanel({
       clear();
       onDocUpdated?.();
     } catch (e) {
-      if (typeof window !== "undefined") {
-        window.alert(
-          t("Reset failed: {{msg}}", {
-            msg: e instanceof Error ? e.message : t("unknown error"),
-          }),
-        );
-      }
+      notify(
+        t("Reset failed: {{msg}}", {
+          msg: e instanceof Error ? e.message : t("unknown error"),
+        }),
+        { tone: "error" },
+      );
     }
   }, [isRunning, t, layer, docKey, clear, onDocUpdated]);
 

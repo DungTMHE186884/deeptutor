@@ -12,6 +12,7 @@ import {
   type GitHubSyncResult,
 } from "@/features/knowledge/api/sources";
 import { formatKnowledgeTimestamp } from "@/lib/knowledge-helpers";
+import { confirmAction } from "@/lib/confirm";
 
 interface KbGitHubSourcesSectionProps {
   kbName: string;
@@ -75,6 +76,7 @@ export default function KbGitHubSourcesSection({
   };
 
   const handleRemove = async (sourceId: string) => {
+    if (!(await confirmAction(t("Remove this GitHub source?"), { tone: "danger" }))) return;
     setError(null);
     try {
       await removeGitHubSource(kbName, sourceId);
@@ -124,7 +126,7 @@ export default function KbGitHubSourcesSection({
           </div>
           <p className="mt-0.5 text-[11.5px] text-[var(--muted-foreground)]">
             {t(
-              "Track a GitHub repo's Markdown docs. DeepTutor auto-syncs daily; you can also trigger a sync manually.",
+              "Track a GitHub repo's Markdown docs. PathMind auto-syncs daily; you can also trigger a sync manually.",
             )}
           </p>
         </div>

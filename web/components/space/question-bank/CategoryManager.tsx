@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
 import type { NotebookCategory } from "@/lib/notebook-api";
+import { confirmAction } from "@/lib/confirm";
 
 interface CategoryManagerProps {
   categories: NotebookCategory[];
@@ -114,15 +115,16 @@ export default function CategoryManager({
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => {
+                  onClick={async () => {
                     // Deleting a category unfiles its questions; it never
                     // deletes them. Say so — the wording is the whole point
                     // of the prompt.
                     if (
-                      window.confirm(
+                      await confirmAction(
                         t(
                           "Delete this tag? The questions themselves stay in your bank.",
                         ),
+                        { tone: "danger" },
                       )
                     )
                       void run(() => onDelete(category.id));

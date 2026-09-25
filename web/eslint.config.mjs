@@ -29,7 +29,7 @@ const config = [
   },
   {
     // ``.next-*`` covers every build output, including the throwaway dist dirs
-    // a second dev server needs (DEEPTUTOR_NEXT_DIST_DIR, see next.config.js):
+    // a second dev server needs (PATHMIND_NEXT_DIST_DIR, see next.config.js):
     // without it, running one turns `npx eslint .` — a CI gate — red with
     // hundreds of errors from generated code.
     ignores: [

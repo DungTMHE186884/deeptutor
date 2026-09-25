@@ -6,8 +6,6 @@ import { Loader2 } from 'lucide-react'
 import PartnerGroupChat from '@/components/partners/group/PartnerGroupChat'
 import { getPartnerGroup, type PartnerGroup } from '@/lib/partner-groups-api'
 import type { StreamEvent } from '@/features/chat/model/protocol'
-import SubagentTabBody from './SubagentTabBody'
-import SubagentRunTranscript from './SubagentRunTranscript'
 import PartnerChat from '@/components/partners/PartnerChat'
 import { getPartner, getPartnerConsultationSession, type PartnerInfo } from '@/lib/partners-api'
 
@@ -25,7 +23,7 @@ export default function ConsultationTabBody({
       <div className="flex h-full min-h-0 flex-col overflow-hidden">
         {typeof meta.partner_group_idle_seconds === 'number' && meta.partner_group_idle_seconds > 0 && (
           <p role="status" className="shrink-0 border-b border-[var(--border)] px-4 py-2 text-xs text-[var(--muted-foreground)]">
-            {t('DeepTutor will respond in {{count}}s. Continue here to keep discussing.', { count: meta.partner_group_idle_seconds })}
+            {t('PathMind will respond in {{count}}s. Continue here to keep discussing.', { count: meta.partner_group_idle_seconds })}
           </p>
         )}
         <GroupDiscussionBody
@@ -49,7 +47,7 @@ export default function ConsultationTabBody({
       </div>
     )
   }
-  return <SubagentTabBody tabEvents={tabEvents} sessionId={sessionId} />
+  return null
 }
 
 function GroupDiscussionBody({ groupId, sessionKey, consultationActive }: { groupId: string; sessionKey: string; consultationActive: boolean }) {
@@ -96,10 +94,6 @@ function GroupDiscussionBody({ groupId, sessionKey, consultationActive }: { grou
 }
 
 function PartnerConsultationPending({ events }: { events: StreamEvent[] }) {
-  // Older saved traces predate native session identities. Keep them readable.
-  if (events.some(event => ['text', 'result', 'reasoning'].includes(String(event.metadata?.subagent_channel)))) {
-    return <div className="h-full min-h-0 overflow-y-auto overscroll-contain"><SubagentRunTranscript events={events} /></div>
-  }
   const error = events.find(event => event.metadata?.subagent_channel === 'error')
   return error ? (
     <p role="alert" className="p-4 text-sm text-[var(--destructive)]">{error.content}</p>

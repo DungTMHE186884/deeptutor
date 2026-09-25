@@ -9,6 +9,7 @@ import {
   listPartnerGroupSessions,
   type PartnerGroupSession,
 } from "@/lib/partner-groups-api";
+import { confirmAction } from "@/lib/confirm";
 
 /**
  * Discussion threads for one group.
@@ -67,6 +68,7 @@ export default function GroupSessionPicker({
   const label = current?.title || t("New discussion");
 
   const remove = async (key: string) => {
+    if (!(await confirmAction(t("Delete this discussion?"), { tone: "danger" }))) return;
     setBusy(key);
     try {
       await deletePartnerGroupSession(groupId, key);

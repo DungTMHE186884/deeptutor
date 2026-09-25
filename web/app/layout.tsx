@@ -3,13 +3,15 @@ import { Geist, Lora } from "next/font/google";
 import "./globals.css";
 import ThemeScript from "@/components/ThemeScript";
 import ToastViewport from "@/components/common/ToastViewport";
+import ConfirmHost from "@/components/common/ConfirmHost";
+import AccountThemeSync from "@/components/common/AccountThemeSync";
 import MotionProvider from "@/components/common/MotionProvider";
 import SettingsReturnTracker from "@/components/settings/SettingsReturnTracker";
 import { WorkspaceNavigation } from "@/components/workspaces/WorkspaceNavigation";
 import { AppShellProvider } from "@/context/AppShellContext";
 import { I18nClientBridge } from "@/i18n/I18nClientBridge";
 
-// Geist matches the public site (deeptutor.info) and stays crisp at the
+// Geist matches the public site (pathmind.info) and stays crisp at the
 // small UI sizes the composer/toolbars use, unlike the rounder Jakarta.
 const fontSans = Geist({
   subsets: ["latin"],
@@ -24,7 +26,7 @@ const fontSerif = Lora({
 });
 
 export const metadata: Metadata = {
-  title: "DeepTutor",
+  title: "PathMind",
   description: "Agent-native intelligent learning companion",
   icons: {
     icon: [
@@ -61,6 +63,8 @@ export default function RootLayout({
             <I18nClientBridge>{children}</I18nClientBridge>
           </MotionProvider>
           <ToastViewport />
+          <ConfirmHost />
+          <AccountThemeSync />
         </AppShellProvider>
       </body>
     </html>

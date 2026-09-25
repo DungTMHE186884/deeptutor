@@ -33,7 +33,7 @@ export default function InteractiveBlock({ block }: InteractiveBlockProps) {
   }
 
   const result: VisualizeResult = {
-    schema_version: "deeptutor.visualization/v1",
+    schema_version: "pathmind.visualization/v1",
     response: description,
     render_type: "html",
     renderer: {

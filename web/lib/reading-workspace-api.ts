@@ -148,7 +148,7 @@ export async function listReadingLibraryMaterials(
 
 /**
  * Content id the server would derive for these bytes — sha256 truncated to 16
- * hex chars, matching `deeptutor.reading.store.content_hash`. Hashing happens
+ * hex chars, matching `pathmind.reading.store.content_hash`. Hashing happens
  * before the upload so a duplicate is caught while the user can still choose,
  * which means reading the whole file into memory: past the ceiling we fall back
  * to name-only matching rather than freezing the tab on a 500 MB lecture.

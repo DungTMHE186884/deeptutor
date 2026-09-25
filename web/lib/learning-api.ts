@@ -57,7 +57,7 @@ export async function initModules(bookId: string, modules: ModuleInit[]) {
 }
 
 // ── Mastery map (the dashboard view) ──────────────────────────────────────
-// Mirrors deeptutor/learning/policy.py map_summary + next_objective.
+// Mirrors pathmind/learning/policy.py map_summary + next_objective.
 
 export type ObjectiveStatus = "new" | "learning" | "mastered";
 
@@ -192,7 +192,7 @@ export async function renameProgress(pathId: string, name: string) {
 }
 
 // ── Activity feed ─────────────────────────────────────────────────────────
-// Mirrors deeptutor/learning/models.py MasteryEvent. Every committed change to
+// Mirrors pathmind/learning/models.py MasteryEvent. Every committed change to
 // a path emits one, numbered by the path's revision — which is what lets the
 // dashboard follow along with a tutoring session running in another tab.
 
@@ -222,7 +222,7 @@ export async function fetchProgressEvents(
 }
 
 // ── One objective's evidence trail ────────────────────────────────────────
-// Mirrors deeptutor/learning/policy.py objective_report.
+// Mirrors pathmind/learning/policy.py objective_report.
 
 export interface ObjectiveAttempt {
   question_id: string;
@@ -402,7 +402,7 @@ export async function generateModulesFromNotebook(
 
 // ── Mastery Path V2 product surface ──────────────────────────────────────
 
-// Mirrors deeptutor/learning/models.py TopicSourceKind.
+// Mirrors pathmind/learning/models.py TopicSourceKind.
 export type TopicSourceKind =
   | "goal"
   | "book"
@@ -530,7 +530,7 @@ export interface CreateTopicInput extends Omit<GenerateTopicInput, "name"> {
   modules: ModuleInit[];
 }
 
-/** Mirrors deeptutor/learning/models.py LearnerProfile. */
+/** Mirrors pathmind/learning/models.py LearnerProfile. */
 export interface LearnerProfile {
   prior_knowledge: string;
   target_level: string;

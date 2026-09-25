@@ -120,7 +120,6 @@ import {
   type OutlineItem,
 } from "@/lib/research-types";
 import { listKnowledgeBases } from "@/features/knowledge/api/catalog";
-import { getSubagentSettings } from "@/lib/subagents-api";
 import { useLLMOptions } from "@/hooks/useLLMOptions";
 import {
   getEnabledOptionalTools,
@@ -577,7 +576,7 @@ export default function ChatWorkspace({
     prefillInputRef.current?.(text);
   }, []);
 
-  // A message handed over by another page (Settings' "set up with DeepTutor"
+  // A message handed over by another page (Settings' "set up with PathMind"
   // button). Prefilled rather than sent: the user reads what will be asked and
   // presses enter themselves. Consumed once, so a refresh does not retype it.
   //
@@ -1845,17 +1844,8 @@ export default function ChatWorkspace({
     () => state.knowledgeBases.find((name) => agentNameSet.has(name)) ?? null,
     [state.knowledgeBases, agentNameSet],
   );
-  // How many times DeepTutor may consult the selected agent this turn. Seeded
-  // from the configured default; the composer's stepper overrides it per turn.
-  const [subagentBudget, setSubagentBudget] = useState<number | null>(null);
   const [selectedPartner, setSelectedPartner] = useState<string | null>(null);
   const [selectedPartnerGroup, setSelectedPartnerGroup] = useState<string | null>(null);
-
-  useEffect(() => {
-    void getSubagentSettings()
-      .then((settings) => setSubagentBudget(settings.consult_budget))
-      .catch(() => undefined);
-  }, []);
 
   const handleSend = useCallback(
     async (content: string) => {
@@ -1946,11 +1936,6 @@ export default function ChatWorkspace({
         if (!researchValidation.valid) return;
         config = buildResearchWSConfig(researchConfig);
       }
-      // When a connected agent is selected, carry the per-turn consult budget
-      // (how many times DeepTutor may ask it) so the subagent capability uses it.
-      if (selectedAgent && subagentBudget) {
-        config = { ...(config ?? {}), subagent_consult_budget: subagentBudget };
-      }
       if (selectedPartner) config = { ...(config ?? {}), consult_partner_id: selectedPartner };
       if (selectedPartnerGroup) config = { ...(config ?? {}), partner_discussion_group_id: selectedPartnerGroup };
       // Sent on every turn, including empty to mean "not in a course". The
@@ -2038,7 +2023,6 @@ export default function ChatWorkspace({
       sendMessage,
       shouldAutoScrollRef,
       state.isStreaming,
-      subagentBudget,
       selectedPartnerGroup,
       selectedPartner,
       submitUserReply,
@@ -2365,10 +2349,6 @@ export default function ChatWorkspace({
       <GeogebraTabProvider>
         <QuizFollowupBridge viewerPanelRef={viewerPanelRef} />
         <GeogebraTabBridge viewerPanelRef={viewerPanelRef} />
-        <SubagentTabWatcher
-          messages={state.messages}
-          viewerPanelRef={viewerPanelRef}
-        />
         <div
           className="relative h-full overflow-hidden"
           data-watching-workspace={watching ? "true" : undefined}
@@ -2508,7 +2488,7 @@ export default function ChatWorkspace({
                   <div className="w-full max-w-[960px] flex items-center justify-center gap-4">
                     <img
                       src="/logo_black.png"
-                      alt="DeepTutor"
+                      alt="PathMind"
                       width={40}
                       height={40}
                       className="h-10 w-10 select-none"
@@ -2673,8 +2653,6 @@ export default function ChatWorkspace({
         onSelectPartnerGroup={handleSelectPartnerGroup}
         selectedPartner={selectedPartner}
         onSelectPartner={handleSelectPartner}
-                subagentBudget={subagentBudget}
-                onSubagentBudgetChange={setSubagentBudget}
                 llmOptions={llmOptions}
                 activeLLMDefault={activeLLMDefault}
                 llmSelection={state.llmSelection}
@@ -2879,49 +2857,6 @@ function GeogebraTabBridge({
   return null;
 }
 
-/**
- * Watches the turn's messages for connected-subagent runs and mirrors each
- * (grouped by the consult's call id) into its own side-viewer tab — opening +
- * focusing the panel when a consult starts, then live-refreshing as the
- * agent's native events stream in. Keeps the chat trace compact while the full
- * run shows in the sidebar.
- */
-function SubagentTabWatcher({
-  messages,
-  viewerPanelRef,
-}: {
-  messages: { events?: StreamEvent[] }[];
-  viewerPanelRef: React.MutableRefObject<SessionViewerPanelHandle | null>;
-}) {
-  useEffect(() => {
-    // Group by turn so all of one turn's consults (DeepTutor may ask the agent
-    // several questions in a row, each its own tool call) land in one tab as a
-    // single running dialogue; fall back to the call id when no turn is set.
-    const groups = new Map<string, { label: string; events: StreamEvent[] }>();
-    for (const msg of messages) {
-      for (const ev of msg.events ?? []) {
-        const meta = (ev.metadata ?? {}) as Record<string, unknown>;
-        if (meta.trace_kind !== "subagent_event") continue;
-        const key = String(meta.turn_id || meta.call_id || meta.trace_id || "");
-        if (!key) continue;
-        const existing = groups.get(key);
-        const label = String(
-          meta.subagent_name || existing?.label || "Subagent",
-        );
-        if (existing) {
-          existing.label = label;
-          existing.events.push(ev);
-        } else {
-          groups.set(key, { label, events: [ev] });
-        }
-      }
-    }
-    for (const [key, group] of groups) {
-      viewerPanelRef.current?.openSubagentTab(key, group.label, group.events);
-    }
-  }, [messages, viewerPanelRef]);
-  return null;
-}
 
 /**
  * Header action button that auto-collapses to icon-only when the chat
